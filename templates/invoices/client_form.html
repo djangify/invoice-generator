@@ -1,0 +1,100 @@
+{% extends 'invoices/base.html' %}
+
+{% block title %}{{ action }} Client - Invoice Generator{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-semibold text-gray-900">{{ action }} Client</h1>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg p-6 max-w-2xl">
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <div>
+            <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+                <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.phone.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <label for="{{ form.address_line1.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Address Line 1</label>
+            {{ form.address_line1 }}
+            {% if form.address_line1.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.address_line1.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div>
+            <label for="{{ form.address_line2.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
+            {{ form.address_line2 }}
+            {% if form.address_line2.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.address_line2.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+                <label for="{{ form.city.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                {{ form.city }}
+                {% if form.city.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.city.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.postcode.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Postcode</label>
+                {{ form.postcode }}
+                {% if form.postcode.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.postcode.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <label for="{{ form.vat_number.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">VAT Number (optional)</label>
+            {{ form.vat_number }}
+            {% if form.vat_number.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.vat_number.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div class="flex justify-end space-x-3">
+            <a href="{% url 'invoices:client_list' %}" 
+               class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Cancel
+            </a>
+            <button type="submit" 
+                    class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800">
+                Save Client
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    input[type="text"], input[type="email"] {
+        @apply mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm;
+    }
+</style>
+{% endblock %}

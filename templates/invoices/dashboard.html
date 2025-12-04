@@ -1,0 +1,115 @@
+{% extends 'invoices/base.html' %}
+
+{% block title %}Dashboard - Invoice Generator{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-semibold text-gray-900">Dashboard</h1>
+    <p class="mt-1 text-sm text-gray-500">Tax Year {{ active_year.year_label }} ({{ active_year.start_date|date:"d M Y" }} - {{ active_year.end_date|date:"d M Y" }})</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+    <div class="bg-white overflow-hidden border border-gray-200 rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Total Clients</dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ total_clients }}</dd>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden border border-gray-200 rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Invoices ({{ active_year.year_label }})</dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ total_invoices }}</dd>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden border border-gray-200 rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Draft Invoices</dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ draft_invoices }}</dd>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white overflow-hidden border border-gray-200 rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <dt class="text-sm font-medium text-gray-500 truncate">Unpaid Invoices</dt>
+                    <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ unpaid_invoices }}</dd>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Card -->
+<div class="bg-white border border-gray-200 rounded-lg p-6 mb-8">
+    <h2 class="text-lg font-medium text-gray-900 mb-2">Total Revenue ({{ active_year.year_label }})</h2>
+    <p class="text-3xl font-semibold text-gray-900">£{{ total_revenue|floatformat:2 }}</p>
+    <p class="mt-1 text-sm text-gray-500">From paid invoices only</p>
+</div>
+
+<!-- Recent Invoices -->
+<div class="bg-white border border-gray-200 rounded-lg">
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <h2 class="text-lg font-medium text-gray-900">Recent Invoices ({{ active_year.year_label }})</h2>
+        <a href="{% url 'invoices:invoice_create' %}" 
+           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800">
+            New Invoice
+        </a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for invoice in recent_invoices %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <a href="{% url 'invoices:invoice_detail' invoice.pk %}" class="text-gray-900 hover:text-gray-600">
+                            {{ invoice.invoice_number }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invoice.client.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.date|date:"d M Y" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">£{{ invoice.total|floatformat:2 }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-medium rounded-full 
+                            {% if invoice.status == 'paid' %}bg-green-100 text-green-800
+                            {% elif invoice.status == 'sent' %}bg-blue-100 text-blue-800
+                            {% elif invoice.status == 'overdue' %}bg-red-100 text-red-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ invoice.get_status_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No invoices yet for {{ active_year.year_label }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

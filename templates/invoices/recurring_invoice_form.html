@@ -1,0 +1,183 @@
+{% extends 'invoices/base.html' %}
+
+{% block title %}{{ action }} Recurring Invoice - Invoice Generator{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-semibold text-gray-900">{{ action }} Recurring Invoice</h1>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg p-6">
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <!-- Invoice Details -->
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+                <label for="{{ form.client.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Client</label>
+                {{ form.client }}
+                {% if form.client.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.client.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.frequency.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                {{ form.frequency }}
+                {% if form.frequency.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.frequency.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            <div>
+                <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                {{ form.start_date }}
+                {% if form.start_date.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.start_date.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.next_invoice_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Next Invoice Date</label>
+                {{ form.next_invoice_date }}
+                {% if form.next_invoice_date.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.next_invoice_date.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.end_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">End Date (optional)</label>
+                {{ form.end_date }}
+                {% if form.end_date.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.end_date.errors.0 }}</p>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500">Leave blank for no end date</p>
+            </div>
+        </div>
+
+        <div>
+            <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            {{ form.status }}
+            {% if form.status.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.status.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Invoice Items -->
+        <div class="border-t border-gray-200 pt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Invoice Items</h3>
+            
+            {{ formset.management_form }}
+            
+            <div id="invoice-items" class="space-y-4">
+                {% for item_form in formset %}
+                <div class="invoice-item p-4 bg-gray-50 rounded-md border border-gray-200">
+                    {{ item_form.id }}
+                    
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+                        <div class="sm:col-span-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            {{ item_form.description }}
+                            {% if item_form.description.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ item_form.description.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                            {{ item_form.quantity }}
+                            {% if item_form.quantity.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ item_form.quantity.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Rate (£)</label>
+                            {{ item_form.rate }}
+                            {% if item_form.rate.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ item_form.rate.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">VAT (%)</label>
+                            {{ item_form.vat_rate }}
+                            {% if item_form.vat_rate.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ item_form.vat_rate.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="sm:col-span-1 flex items-end">
+                            {% if formset.can_delete %}
+                                <label class="flex items-center">
+                                    {{ item_form.DELETE }}
+                                    <span class="ml-2 text-sm text-gray-600">Delete</span>
+                                </label>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+            <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+            {{ form.notes }}
+            {% if form.notes.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.notes.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Payment Terms -->
+        <div>
+            <label for="{{ form.payment_terms.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Payment Terms (optional)</label>
+            {{ form.payment_terms }}
+            {% if form.payment_terms.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.payment_terms.errors.0 }}</p>
+            {% endif %}
+            <p class="mt-1 text-xs text-gray-500">Leave blank to use default payment terms from settings</p>
+        </div>
+
+        <!-- Payment Link -->
+        <div>
+            <label for="{{ form.payment_link.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Payment Link (optional)</label>
+            {{ form.payment_link }}
+            {% if form.payment_link.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.payment_link.errors.0 }}</p>
+            {% endif %}
+            <p class="mt-1 text-xs text-gray-500">Optional: Specific Stripe/PayPal link for invoices generated from this recurring template</p>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+            <a href="{% if recurring_invoice %}{% url 'invoices:recurring_invoice_detail' recurring_invoice.pk %}{% else %}{% url 'invoices:recurring_invoice_list' %}{% endif %}" 
+               class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Cancel
+            </a>
+            <button type="submit" 
+                    class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800">
+                Save Recurring Invoice
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    input[type="text"], 
+    input[type="date"],
+    input[type="number"],
+    input[type="url"],
+    select,
+    textarea {
+        @apply mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm;
+    }
+    
+    textarea {
+        @apply resize-none;
+    }
+</style>
+{% endblock %}

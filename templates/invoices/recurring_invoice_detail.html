@@ -1,0 +1,161 @@
+{% extends 'invoices/base.html' %}
+
+{% block title %}Recurring Invoice: {{ recurring_invoice.client.name }} - Invoice Generator{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-3xl font-semibold text-gray-900">Recurring Invoice</h1>
+        <p class="mt-1 text-sm text-gray-500">{{ recurring_invoice.client.name }} - {{ recurring_invoice.get_frequency_display }}</p>
+    </div>
+    <div class="flex space-x-3">
+        {% if recurring_invoice.status == 'active' %}
+        <a href="{% url 'invoices:recurring_invoice_generate' recurring_invoice.pk %}" 
+           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Generate Invoice Now
+        </a>
+        <a href="{% url 'invoices:recurring_invoice_pause' recurring_invoice.pk %}" 
+           class="inline-flex items-center px-4 py-2 border border-yellow-300 text-sm font-medium rounded-md text-yellow-700 bg-yellow-50 hover:bg-yellow-100">
+            Pause
+        </a>
+        {% elif recurring_invoice.status == 'paused' %}
+        <a href="{% url 'invoices:recurring_invoice_resume' recurring_invoice.pk %}" 
+           class="inline-flex items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100">
+            Resume
+        </a>
+        {% endif %}
+        <a href="{% url 'invoices:recurring_invoice_edit' recurring_invoice.pk %}" 
+           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800">
+            Edit Recurring Invoice
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <!-- Status Card -->
+    <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 class="text-sm font-medium text-gray-500 mb-2">Status</h3>
+        <span class="px-3 py-1 inline-flex text-sm leading-5 font-medium rounded-full 
+            {% if recurring_invoice.status == 'active' %}bg-green-100 text-green-800
+            {% elif recurring_invoice.status == 'paused' %}bg-yellow-100 text-yellow-800
+            {% else %}bg-gray-100 text-gray-800{% endif %}">
+            {{ recurring_invoice.get_status_display }}
+        </span>
+    </div>
+
+    <!-- Next Invoice Card -->
+    <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 class="text-sm font-medium text-gray-500 mb-2">Next Invoice Date</h3>
+        <p class="text-2xl font-semibold text-gray-900">{{ recurring_invoice.next_invoice_date|date:"d M Y" }}</p>
+    </div>
+
+    <!-- Frequency Card -->
+    <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <h3 class="text-sm font-medium text-gray-500 mb-2">Frequency</h3>
+        <p class="text-2xl font-semibold text-gray-900">{{ recurring_invoice.get_frequency_display }}</p>
+    </div>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg p-8 mb-6">
+    <!-- Client and Schedule Info -->
+    <div class="mb-8 pb-8 border-b border-gray-200">
+        <div class="grid grid-cols-2 gap-8">
+            <div>
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Client</h3>
+                <p class="text-gray-900 font-medium">{{ recurring_invoice.client.name }}</p>
+                <p class="text-sm text-gray-600">{{ recurring_invoice.client.email }}</p>
+            </div>
+            <div class="text-right">
+                <div class="space-y-1">
+                    <p class="text-sm text-gray-500">Start Date: <span class="text-gray-900">{{ recurring_invoice.start_date|date:"d M Y" }}</span></p>
+                    {% if recurring_invoice.end_date %}
+                    <p class="text-sm text-gray-500">End Date: <span class="text-gray-900">{{ recurring_invoice.end_date|date:"d M Y" }}</span></p>
+                    {% else %}
+                    <p class="text-sm text-gray-500">End Date: <span class="text-gray-900">No end date</span></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Items Template -->
+    <div class="mb-8">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Invoice Items</h3>
+        <table class="min-w-full">
+            <thead>
+                <tr class="border-b border-gray-200">
+                    <th class="py-3 text-left text-sm font-medium text-gray-500">Description</th>
+                    <th class="py-3 text-right text-sm font-medium text-gray-500">Quantity</th>
+                    <th class="py-3 text-right text-sm font-medium text-gray-500">Rate</th>
+                    <th class="py-3 text-right text-sm font-medium text-gray-500">VAT</th>
+                    <th class="py-3 text-right text-sm font-medium text-gray-500">Amount</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for item in recurring_invoice.items.all %}
+                <tr>
+                    <td class="py-4 text-sm text-gray-900">{{ item.description }}</td>
+                    <td class="py-4 text-sm text-gray-900 text-right">{{ item.quantity }}</td>
+                    <td class="py-4 text-sm text-gray-900 text-right">£{{ item.rate|floatformat:2 }}</td>
+                    <td class="py-4 text-sm text-gray-900 text-right">{{ item.vat_rate }}%</td>
+                    <td class="py-4 text-sm text-gray-900 text-right font-medium">£{{ item.line_total|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Notes -->
+    {% if recurring_invoice.notes %}
+    <div class="mb-8 pt-8 border-t border-gray-200">
+        <h3 class="text-sm font-medium text-gray-500 mb-2">Notes</h3>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ recurring_invoice.notes }}</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recently Generated Invoices -->
+{% if generated_invoices %}
+<div class="bg-white border border-gray-200 rounded-lg">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-medium text-gray-900">Recently Generated Invoices</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for invoice in generated_invoices %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <a href="{% url 'invoices:invoice_detail' invoice.pk %}" class="text-gray-900 hover:text-gray-600">
+                            {{ invoice.invoice_number }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.date|date:"d M Y" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.due_date|date:"d M Y" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">£{{ invoice.total|floatformat:2 }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-medium rounded-full 
+                            {% if invoice.status == 'paid' %}bg-green-100 text-green-800
+                            {% elif invoice.status == 'sent' %}bg-blue-100 text-blue-800
+                            {% elif invoice.status == 'overdue' %}bg-red-100 text-red-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ invoice.get_status_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

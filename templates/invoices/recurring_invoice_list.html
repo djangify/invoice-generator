@@ -1,0 +1,84 @@
+{% extends 'invoices/base.html' %}
+
+{% block title %}Recurring Invoices - Invoice Generator{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <h1 class="text-3xl font-semibold text-gray-900">Recurring Invoices</h1>
+    <a href="{% url 'invoices:recurring_invoice_create' %}" 
+       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800">
+        New Recurring Invoice
+    </a>
+</div>
+
+<!-- Filter by status -->
+<div class="mb-4 flex space-x-2">
+    <a href="{% url 'invoices:recurring_invoice_list' %}" 
+       class="px-3 py-2 text-sm font-medium rounded-md {% if not request.GET.status %}bg-gray-900 text-white{% else %}bg-white text-gray-700 border border-gray-300 hover:bg-gray-50{% endif %}">
+        All
+    </a>
+    <a href="?status=active" 
+       class="px-3 py-2 text-sm font-medium rounded-md {% if request.GET.status == 'active' %}bg-gray-900 text-white{% else %}bg-white text-gray-700 border border-gray-300 hover:bg-gray-50{% endif %}">
+        Active
+    </a>
+    <a href="?status=paused" 
+       class="px-3 py-2 text-sm font-medium rounded-md {% if request.GET.status == 'paused' %}bg-gray-900 text-white{% else %}bg-white text-gray-700 border border-gray-300 hover:bg-gray-50{% endif %}">
+        Paused
+    </a>
+    <a href="?status=cancelled" 
+       class="px-3 py-2 text-sm font-medium rounded-md {% if request.GET.status == 'cancelled' %}bg-gray-900 text-white{% else %}bg-white text-gray-700 border border-gray-300 hover:bg-gray-50{% endif %}">
+        Cancelled
+    </a>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Frequency</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Invoice</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for recurring in recurring_invoices %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <a href="{% url 'invoices:recurring_invoice_detail' recurring.pk %}" class="text-gray-900 hover:text-gray-600 font-medium">
+                        {{ recurring.client.name }}
+                    </a>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ recurring.get_frequency_display }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ recurring.next_invoice_date|date:"d M Y" }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if recurring.end_date %}
+                        {{ recurring.end_date|date:"d M Y" }}
+                    {% else %}
+                        <span class="text-gray-400">No end date</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-medium rounded-full 
+                        {% if recurring.status == 'active' %}bg-green-100 text-green-800
+                        {% elif recurring.status == 'paused' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ recurring.get_status_display }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <a href="{% url 'invoices:recurring_invoice_edit' recurring.pk %}" class="text-gray-600 hover:text-gray-900 mr-4">Edit</a>
+                    <a href="{% url 'invoices:recurring_invoice_delete' recurring.pk %}" class="text-red-600 hover:text-red-900">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No recurring invoices yet</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
