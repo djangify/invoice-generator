@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from .models import (
     Client,
@@ -32,6 +33,7 @@ def get_active_year(request):
     return InvoiceYear.get_active_year()
 
 
+@login_required
 def switch_year(request, year_id):
     """Switch the active year for the session"""
     year = get_object_or_404(InvoiceYear, id=year_id)
@@ -40,6 +42,7 @@ def switch_year(request, year_id):
     return redirect("invoices:dashboard")
 
 
+@login_required
 def dashboard(request):
     """Main dashboard view"""
     active_year = get_active_year(request)
@@ -74,6 +77,7 @@ def dashboard(request):
 
 
 # Client views
+@login_required
 def client_list(request):
     clients = Client.objects.all()
     active_year = get_active_year(request)
@@ -87,6 +91,7 @@ def client_list(request):
     return render(request, "invoices/client_list.html", context)
 
 
+@login_required
 def client_create(request):
     active_year = get_active_year(request)
     all_years = InvoiceYear.objects.all()
@@ -109,6 +114,7 @@ def client_create(request):
     return render(request, "invoices/client_form.html", context)
 
 
+@login_required
 def client_edit(request, pk):
     client = get_object_or_404(Client, pk=pk)
     active_year = get_active_year(request)
@@ -132,6 +138,7 @@ def client_edit(request, pk):
     return render(request, "invoices/client_form.html", context)
 
 
+@login_required
 def client_delete(request, pk):
     client = get_object_or_404(Client, pk=pk)
     active_year = get_active_year(request)
@@ -150,7 +157,7 @@ def client_delete(request, pk):
     return render(request, "invoices/client_confirm_delete.html", context)
 
 
-# Invoice views
+@login_required
 def invoice_list(request):
     active_year = get_active_year(request)
     all_years = InvoiceYear.objects.all()
@@ -168,6 +175,7 @@ def invoice_list(request):
     return render(request, "invoices/invoice_list.html", context)
 
 
+@login_required
 def invoice_detail(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     active_year = get_active_year(request)
@@ -181,6 +189,7 @@ def invoice_detail(request, pk):
     return render(request, "invoices/invoice_detail.html", context)
 
 
+@login_required
 def invoice_create(request):
     active_year = get_active_year(request)
     all_years = InvoiceYear.objects.all()
@@ -211,6 +220,7 @@ def invoice_create(request):
     return render(request, "invoices/invoice_form.html", context)
 
 
+@login_required
 def invoice_edit(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     active_year = get_active_year(request)
@@ -242,6 +252,7 @@ def invoice_edit(request, pk):
     return render(request, "invoices/invoice_form.html", context)
 
 
+@login_required
 def invoice_delete(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     active_year = get_active_year(request)
@@ -261,6 +272,7 @@ def invoice_delete(request, pk):
     return render(request, "invoices/invoice_confirm_delete.html", context)
 
 
+@login_required
 def invoice_pdf(request, pk):
     """Generate and download invoice PDF"""
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -278,6 +290,7 @@ def invoice_pdf(request, pk):
     return response
 
 
+@login_required
 def invoice_regenerate_pdf(request, pk):
     """Regenerate and save invoice PDF"""
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -293,6 +306,7 @@ def invoice_regenerate_pdf(request, pk):
     return redirect("invoices:invoice_detail", pk=pk)
 
 
+@login_required
 def invoice_mark_paid(request, pk):
     """Quick action to mark invoice as paid"""
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -307,6 +321,7 @@ def invoice_mark_paid(request, pk):
     return redirect("invoices:invoice_detail", pk=pk)
 
 
+@login_required
 def invoice_mark_sent(request, pk):
     """Quick action to mark invoice as sent"""
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -320,6 +335,7 @@ def invoice_mark_sent(request, pk):
     return redirect("invoices:invoice_detail", pk=pk)
 
 
+@login_required
 def invoice_duplicate(request, pk):
     """Duplicate an existing invoice"""
     original = get_object_or_404(Invoice, pk=pk)
@@ -352,6 +368,7 @@ def invoice_duplicate(request, pk):
     return redirect("invoices:invoice_edit", pk=new_invoice.pk)
 
 
+@login_required
 def client_invoices(request, pk):
     """View all invoices for a specific client"""
     client = get_object_or_404(Client, pk=pk)
@@ -393,6 +410,7 @@ def client_invoices(request, pk):
     return render(request, "invoices/client_invoices.html", context)
 
 
+@login_required
 def client_invoices_pdf(request, pk):
     """Generate PDF of client invoice history"""
     from reportlab.lib import colors
@@ -567,6 +585,7 @@ def client_invoices_pdf(request, pk):
 
 
 # Recurring Invoice views
+@login_required
 def recurring_invoice_list(request):
     active_year = get_active_year(request)
     all_years = InvoiceYear.objects.all()
@@ -584,6 +603,7 @@ def recurring_invoice_list(request):
     return render(request, "invoices/recurring_invoice_list.html", context)
 
 
+@login_required
 def recurring_invoice_detail(request, pk):
     recurring_invoice = get_object_or_404(RecurringInvoice, pk=pk)
     active_year = get_active_year(request)
@@ -601,6 +621,7 @@ def recurring_invoice_detail(request, pk):
     return render(request, "invoices/recurring_invoice_detail.html", context)
 
 
+@login_required
 def recurring_invoice_create(request):
     active_year = get_active_year(request)
     all_years = InvoiceYear.objects.all()
@@ -634,6 +655,7 @@ def recurring_invoice_create(request):
     return render(request, "invoices/recurring_invoice_form.html", context)
 
 
+@login_required
 def recurring_invoice_edit(request, pk):
     recurring_invoice = get_object_or_404(RecurringInvoice, pk=pk)
     active_year = get_active_year(request)
@@ -668,6 +690,7 @@ def recurring_invoice_edit(request, pk):
     return render(request, "invoices/recurring_invoice_form.html", context)
 
 
+@login_required
 def recurring_invoice_delete(request, pk):
     recurring_invoice = get_object_or_404(RecurringInvoice, pk=pk)
     active_year = get_active_year(request)
@@ -689,6 +712,7 @@ def recurring_invoice_delete(request, pk):
     return render(request, "invoices/recurring_invoice_confirm_delete.html", context)
 
 
+@login_required
 def recurring_invoice_generate(request, pk):
     """Manually generate an invoice from a recurring template"""
     recurring_invoice = get_object_or_404(RecurringInvoice, pk=pk)
@@ -711,6 +735,7 @@ def recurring_invoice_generate(request, pk):
         return redirect("invoices:recurring_invoice_detail", pk=pk)
 
 
+@login_required
 def recurring_invoice_pause(request, pk):
     """Pause a recurring invoice"""
     recurring_invoice = get_object_or_404(RecurringInvoice, pk=pk)
@@ -723,6 +748,7 @@ def recurring_invoice_pause(request, pk):
     return redirect("invoices:recurring_invoice_detail", pk=pk)
 
 
+@login_required
 def recurring_invoice_resume(request, pk):
     """Resume a recurring invoice"""
     recurring_invoice = get_object_or_404(RecurringInvoice, pk=pk)
@@ -736,6 +762,7 @@ def recurring_invoice_resume(request, pk):
 
 
 # Settings view
+@login_required
 def company_settings(request):
     settings_obj = CompanySettings.objects.first()
     active_year = get_active_year(request)

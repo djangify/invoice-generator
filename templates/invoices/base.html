@@ -41,9 +41,41 @@
                     </div>
                 </div>
                 
-                <!-- Year Switcher -->
-                {% if active_year and all_years %}
-                <div class="flex items-center">
+                <!-- User Menu and Year Switcher -->
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                    <div class="relative inline-block text-left">
+                        <button type="button" 
+                                onclick="toggleUserDropdown()"
+                                class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                                id="user-menu-button">
+                            {{ user.username }}
+                            <svg class="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        
+                        <div id="user-dropdown" 
+                             class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                            <div class="py-1">
+                                <a href="{% url 'password_change' %}" 
+                                   class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100">
+                                    Change Password
+                                </a>
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            class="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
+                                        Sign Out
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Year Switcher -->
+                    {% if active_year and all_years %}
                     <div class="relative inline-block text-left">
                         <button type="button" 
                                 onclick="toggleYearDropdown()"
@@ -70,8 +102,8 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
     </nav>
@@ -98,15 +130,30 @@
         function toggleYearDropdown() {
             const dropdown = document.getElementById('year-dropdown');
             dropdown.classList.toggle('hidden');
+            // Close user dropdown if open
+            document.getElementById('user-dropdown')?.classList.add('hidden');
         }
 
-        // Close dropdown when clicking outside
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('user-dropdown');
+            dropdown.classList.toggle('hidden');
+            // Close year dropdown if open
+            document.getElementById('year-dropdown')?.classList.add('hidden');
+        }
+
+        // Close dropdowns when clicking outside
         window.addEventListener('click', function(e) {
-            const button = document.getElementById('year-menu-button');
-            const dropdown = document.getElementById('year-dropdown');
+            const yearButton = document.getElementById('year-menu-button');
+            const yearDropdown = document.getElementById('year-dropdown');
+            const userButton = document.getElementById('user-menu-button');
+            const userDropdown = document.getElementById('user-dropdown');
             
-            if (!button.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.add('hidden');
+            if (yearButton && yearDropdown && !yearButton.contains(e.target) && !yearDropdown.contains(e.target)) {
+                yearDropdown.classList.add('hidden');
+            }
+            
+            if (userButton && userDropdown && !userButton.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.classList.add('hidden');
             }
         });
     </script>

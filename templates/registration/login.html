@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Invoice Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full mx-4">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-semibold text-gray-900">Invoice Generator</h1>
+            <p class="mt-2 text-sm text-gray-600">Sign in to your account</p>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-lg p-8">
+            {% if form.errors %}
+            <div class="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+                <p class="text-sm text-red-800">
+                    Invalid username or password. Please try again.
+                </p>
+            </div>
+            {% endif %}
+
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <div>
+                    <label for="id_username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" 
+                           name="username" 
+                           id="id_username" 
+                           autocomplete="username"
+                           required
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm"
+                           autofocus>
+                </div>
+
+                <div>
+                    <label for="id_password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" 
+                           name="password" 
+                           id="id_password" 
+                           autocomplete="current-password"
+                           required
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm">
+                </div>
+
+                <div>
+                    <button type="submit" 
+                            class="w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Sign In
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6 text-center">
+                <a href="{% url 'password_reset' %}" class="text-sm text-gray-600 hover:text-gray-900">
+                    Forgot your password?
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

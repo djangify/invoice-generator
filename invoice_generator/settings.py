@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "adminita",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -112,14 +113,37 @@ USE_I18N = True
 USE_TZ = True
 
 
+# Authentication settings
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "invoices:dashboard"
+LOGOUT_REDIRECT_URL = "login"
+
+# Email backend (console for development, configure SMTP for production)
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# For production, use something like:
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_HOST = "smtp.your-provider.com"
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = "your-email@example.com"
+# EMAIL_HOST_PASSWORD = "your-password"
+# DEFAULT_FROM_EMAIL = "Invoice Generator <noreply@example.com>"
+
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATIC_URL = "static/"
-
-
+# Media files (digital products)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# WhiteNoise Configuration
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# Cache static files for 1 year (immutable because of hashed filenames)
+WHITENOISE_MAX_AGE = 31536000  # 1 year in seconds
+
 
 # Create invoices directory structure
 INVOICES_ROOT = MEDIA_ROOT / "invoices"
