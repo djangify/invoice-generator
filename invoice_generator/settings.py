@@ -27,10 +27,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+SITE_ID = 1
+
 
 # Application definition
 
 INSTALLED_APPS = [
+    "accounts",
     "adminita",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -112,6 +115,7 @@ USE_I18N = True
 
 USE_TZ = True
 
+AUTH_USER_MODEL = "accounts.User"
 
 # Authentication settings
 LOGIN_URL = "login"
