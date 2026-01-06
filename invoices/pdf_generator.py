@@ -183,7 +183,11 @@ class InvoicePDF:
             ],
         ]
 
-        details_table = Table(invoice_details_data, colWidths=[1.5 * inch, 2 * inch])
+        details_table = Table(
+            invoice_details_data,
+            colWidths=[1.5 * inch, 2 * inch],
+            hAlign="LEFT",  # Force left alignment
+        )
         details_table.setStyle(
             TableStyle(
                 [

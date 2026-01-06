@@ -20,6 +20,11 @@ urlpatterns = [
     path("invoices/<int:pk>/edit/", views.invoice_edit, name="invoice_edit"),
     path("invoices/<int:pk>/delete/", views.invoice_delete, name="invoice_delete"),
     path("invoices/<int:pk>/pdf/", views.invoice_pdf, name="invoice_pdf"),
+    path(
+        "invoices/<int:pk>/regenerate-pdf/",
+        views.invoice_regenerate_pdf,
+        name="invoice_regenerate_pdf",
+    ),
     # Recurring Invoices
     path("recurring/", views.recurring_invoice_list, name="recurring_invoice_list"),
     path(

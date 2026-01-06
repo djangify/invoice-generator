@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.db.models import Sum, Count, Q
 from django.http import HttpResponse
 from .models import (
     Client,
@@ -276,6 +275,21 @@ def invoice_pdf(request, pk):
     )
 
     return response
+
+
+def invoice_regenerate_pdf(request, pk):
+    """Regenerate and save invoice PDF"""
+    invoice = get_object_or_404(Invoice, pk=pk)
+
+    try:
+        invoice.generate_and_save_pdf()
+        messages.success(
+            request, f"PDF for {invoice.invoice_number} regenerated successfully."
+        )
+    except Exception as e:
+        messages.error(request, f"Error regenerating PDF: {str(e)}")
+
+    return redirect("invoices:invoice_detail", pk=pk)
 
 
 # Recurring Invoice views

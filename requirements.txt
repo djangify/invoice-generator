@@ -1,9 +1,8 @@
 Django==6.0
 django-environ
-
 pillow
 reportlab
-
+psycopg[binary]
 python-dateutil
 pytz
 tzdata
