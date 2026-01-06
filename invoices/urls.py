@@ -25,6 +25,29 @@ urlpatterns = [
         views.invoice_regenerate_pdf,
         name="invoice_regenerate_pdf",
     ),
+    # Quick status actions
+    path(
+        "invoices/<int:pk>/mark-paid/",
+        views.invoice_mark_paid,
+        name="invoice_mark_paid",
+    ),
+    path(
+        "invoices/<int:pk>/mark-sent/",
+        views.invoice_mark_sent,
+        name="invoice_mark_sent",
+    ),
+    path(
+        "invoices/<int:pk>/duplicate/",
+        views.invoice_duplicate,
+        name="invoice_duplicate",
+    ),
+    # Client invoice history
+    path("clients/<int:pk>/invoices/", views.client_invoices, name="client_invoices"),
+    path(
+        "clients/<int:pk>/invoices/pdf/",
+        views.client_invoices_pdf,
+        name="client_invoices_pdf",
+    ),
     # Recurring Invoices
     path("recurring/", views.recurring_invoice_list, name="recurring_invoice_list"),
     path(

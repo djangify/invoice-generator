@@ -6,6 +6,22 @@
 <div class="mb-6 flex items-center justify-between">
     <h1 class="text-3xl font-semibold text-gray-900">{{ invoice.invoice_number }}</h1>
     <div class="flex space-x-3">
+        {% if invoice.status == 'draft' %}
+        <a href="{% url 'invoices:invoice_mark_sent' invoice.pk %}" 
+           class="inline-flex items-center px-4 py-2 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100">
+            Mark as Sent
+        </a>
+        {% endif %}
+        {% if invoice.status != 'paid' %}
+        <a href="{% url 'invoices:invoice_mark_paid' invoice.pk %}" 
+           class="inline-flex items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100">
+            Mark as Paid
+        </a>
+        {% endif %}
+        <a href="{% url 'invoices:invoice_duplicate' invoice.pk %}" 
+           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Duplicate
+        </a>
         <a href="{% url 'invoices:invoice_pdf' invoice.pk %}" 
            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             Download PDF
