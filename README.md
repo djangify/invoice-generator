@@ -238,6 +238,83 @@ To generate an invoice from a template:
 - Click **Generate Invoice Now** on the recurring invoice detail page
 - The system automatically advances the next invoice date
 
+## Recurring Invoice Automation
+
+Recurring invoices can be automatically generated when they're due. There are several ways to set this up:
+
+### Docker (Recommended)
+
+The `docker-compose.yml` includes a scheduler service that automatically checks for due recurring invoices daily at 6:00 AM.
+
+**To change the schedule time**, edit `docker-compose.yml`:
+```yaml
+scheduler:
+  environment:
+    - SCHEDULE_HOUR=6    # Hour (0-23)
+    - SCHEDULE_MINUTE=0  # Minute (0-59)
+```
+
+**To check scheduler status:**
+```bash
+docker compose logs scheduler -f
+```
+
+**To manually trigger recurring invoice processing:**
+```bash
+docker compose exec web python manage.py process_recurring_invoices
+```
+
+**To see what would be generated (dry run):**
+```bash
+docker compose exec web python manage.py process_recurring_invoices --dry-run
+```
+
+### Local Development
+
+For local development, you'll need to run the command manually or set up your own scheduler:
+
+**Manual processing:**
+```bash
+python manage.py process_recurring_invoices
+```
+
+**Using cron (Linux/macOS):**
+```bash
+# Edit crontab
+crontab -e
+
+# Add this line to run daily at 6:00 AM
+0 6 * * * cd /path/to/invoice-generator && /path/to/venv/bin/python manage.py process_recurring_invoices >> logs/recurring.log 2>&1
+```
+
+**Using Task Scheduler (Windows):**
+1. Open Task Scheduler
+2. Create a Basic Task
+3. Set trigger to Daily at your preferred time
+4. Action: Start a program
+5. Program: `C:\path\to\venv\Scripts\python.exe`
+6. Arguments: `manage.py process_recurring_invoices`
+7. Start in: `C:\path\to\invoice-generator`
+
+### How It Works
+
+1. The scheduler checks all **active** recurring invoices
+2. If `next_invoice_date` is today or earlier, an invoice is generated
+3. The invoice is created as a **Draft** with items copied from the template
+4. A PDF is automatically generated
+5. The `next_invoice_date` advances based on the frequency (weekly/monthly/quarterly/yearly)
+6. The process continues until the optional `end_date` is reached
+
+### Disabling the Scheduler
+
+If you don't need automatic recurring invoice generation, you can disable the scheduler service:
+```bash
+# Run only the web service
+docker compose up -d web
+```
+
+Or remove/comment out the `scheduler` section in `docker-compose.yml`.
+
 ## PDF Invoices
 
 PDFs are generated automatically and include:

@@ -7,7 +7,7 @@ services:
       - .env
     volumes:
       - ./data/media:/app/media
-      - ./data/db:/app/db
+      - ./data/db:/app/data/db
       - ./data/logs:/app/logs
       - ./staticfiles:/app/staticfiles
     ports:
@@ -17,3 +17,22 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+  scheduler:
+    build: .
+    container_name: invoice_generator_scheduler
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Run recurring invoice check daily at 6:00 AM (adjust as needed)
+      - SCHEDULE_HOUR=6
+      - SCHEDULE_MINUTE=0
+    volumes:
+      - ./data/media:/app/media
+      - ./data/db:/app/data/db
+      - ./data/logs:/app/logs
+    depends_on:
+      web:
+        condition: service_healthy
+    command: [ "/bin/bash", "/app/scheduler.sh" ]

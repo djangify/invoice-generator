@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project
 COPY . .
+RUN chmod +x /app/scheduler.sh
 
 # Create directories
 RUN mkdir -p /app/db /app/media /app/logs /app/staticfiles
