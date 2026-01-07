@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Invoice Generator{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon" />
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
     <!-- Navigation -->
@@ -131,8 +134,8 @@
         <div class="max-w-7xl mx-auto px-4 py-8">
             <div class="text-center text-xs text-gray-500">
                 Invoice Generator {{ INVOICEG_VERSION }}
-                · A self-hosted invoicing tool for freelancers and small businesses.
-                <p class="mt-3">
+                · A self-hosted invoicing tool.
+                <p class="mt-2 text-xs text-gray-500">
                     Designed &amp; developed by 
                     <a href="https://www.todiane.com" 
                        target="_blank" 
