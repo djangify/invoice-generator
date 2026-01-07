@@ -1,4 +1,8 @@
+
 # Invoice Generator
+
+![Invoice Generator header](https://github.com/djangify/invoice-generator/blob/436e389e92f8b87cec47ebb776ae71ee699cf439/invoice-generator-diane-corriette.png)
+
 
 A self-hosted Django application for creating and managing invoices, tracking payments, and generating professional PDFs. Designed for UK tax year tracking (April to April).
 
