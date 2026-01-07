@@ -415,9 +415,13 @@ For production deployments:
 
 ## License
 
-MIT License - See LICENSE file for details.
+This project is licensed under the MIT License.  
+See the [LICENSE](license.md) file for details.
 
- # DISCLAIMER
+## Contributions are welcome.  
+Please read [CONTRIBUTING](contributing.md) before submitting a pull request.
+
+## DISCLAIMER
           
 This Invoice Generator is provided "as is" without warranty of any kind. If you choose to self-host this software, you do so at your own risk. The developer accepts no responsibility for data loss, inaccuracies, or any issues arising from its use. Always maintain your own backups and verify calculations independently.
 
