@@ -2,6 +2,7 @@ from .main_views import (
     dashboard,
     switch_year,
     company_settings,
+    health_check,
 )
 
 from .client import (

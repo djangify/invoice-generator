@@ -11,6 +11,7 @@ from invoices.forms import (
     CompanySettingsForm,
 )
 from .utils import get_active_year
+from django.http import JsonResponse
 
 
 @login_required
@@ -87,3 +88,8 @@ def company_settings(request):
         "all_years": all_years,
     }
     return render(request, "invoices/company_settings.html", context)
+
+
+def health_check(request):
+    """Health check endpoint for Docker"""
+    return JsonResponse({"status": "healthy"})

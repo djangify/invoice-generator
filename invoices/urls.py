@@ -6,6 +6,7 @@ app_name = "invoices"
 urlpatterns = [
     # Dashboard
     path("", views.dashboard, name="dashboard"),
+    path("health/", views.health_check, name="health_check"),
     # Year switching
     path("switch-year/<int:year_id>/", views.switch_year, name="switch_year"),
     # Clients
