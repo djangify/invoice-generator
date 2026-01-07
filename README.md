@@ -14,9 +14,6 @@ A self-hosted Django application for creating and managing invoices, tracking pa
 
   <img src="https://img.shields.io/badge/Database-SQLite--First-003B57?style=for-the-badge" alt="SQLite First">
 
-  <a href="https://www.postgresql.org/">
-    <img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
-  </a>
 
   <img src="https://img.shields.io/badge/Deployment-Docker--Ready-2496ED?style=for-the-badge" alt="Docker Ready">
 

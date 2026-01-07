@@ -80,6 +80,9 @@ AUTH_USER_MODEL = "accounts.User"
 
 SITE_ID = 1
 
+# Version
+INVOICEG_VERSION = "0.1.2"
+
 # Authentication settings
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "invoices:dashboard"

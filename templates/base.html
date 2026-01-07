@@ -6,7 +6,7 @@
     <title>{% block title %}Invoice Generator{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 min-h-screen flex flex-col">
     <!-- Navigation -->
     <nav class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -123,10 +123,28 @@
     {% endif %}
 
     <!-- Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
         {% block content %}{% endblock %}
     </main>
-
+<!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-16">
+        <div class="max-w-7xl mx-auto px-4 py-8">
+            <div class="text-center text-xs text-gray-500">
+                Invoice Generator {{ INVOICEG_VERSION }}
+                · A self-hosted invoicing tool for freelancers and small businesses.
+                <p class="mt-3">
+                    Designed &amp; developed by 
+                    <a href="https://www.todiane.com" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       class="text-gray-700 hover:text-gray-900 underline"
+                       aria-label="Open todiane.com website in a new tab">
+                        ToDiane.com
+                    </a>
+                </p>
+            </div>
+        </div>
+    </footer>
     <script>
         function toggleYearDropdown() {
             const dropdown = document.getElementById('year-dropdown');
