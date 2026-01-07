@@ -39,22 +39,32 @@ class InvoiceForm(forms.ModelForm):
             "payment_link",
         ]
         widgets = {
-            "date": forms.DateInput(attrs={"type": "date"}),
-            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "date": forms.DateInput(
+                attrs={"type": "date"},
+                format="%Y-%m-%d",
+            ),
+            "due_date": forms.DateInput(
+                attrs={"type": "date"},
+                format="%Y-%m-%d",
+            ),
             "notes": forms.Textarea(attrs={"rows": 3}),
             "payment_terms": forms.Textarea(attrs={"rows": 3}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["date"].input_formats = ["%Y-%m-%d"]
+        self.fields["due_date"].input_formats = ["%Y-%m-%d"]
 
     def clean(self):
         cleaned_data = super().clean()
         invoice_date = cleaned_data.get("date")
         due_date = cleaned_data.get("due_date")
 
-        if invoice_date and due_date:
-            if due_date < invoice_date:
-                raise ValidationError(
-                    {"due_date": "Due date must be on or after the invoice date."}
-                )
+        if invoice_date and due_date and due_date < invoice_date:
+            raise ValidationError(
+                {"due_date": "Due date must be on or after the invoice date."}
+            )
 
         return cleaned_data
 
@@ -90,23 +100,48 @@ class RecurringInvoiceForm(forms.ModelForm):
             "payment_link",
         ]
         widgets = {
-            "start_date": forms.DateInput(attrs={"type": "date"}),
-            "end_date": forms.DateInput(attrs={"type": "date"}),
-            "next_invoice_date": forms.DateInput(attrs={"type": "date"}),
+            "start_date": forms.DateInput(
+                attrs={"type": "date"},
+                format="%Y-%m-%d",
+            ),
+            "end_date": forms.DateInput(
+                attrs={"type": "date"},
+                format="%Y-%m-%d",
+            ),
+            "next_invoice_date": forms.DateInput(
+                attrs={"type": "date"},
+                format="%Y-%m-%d",
+            ),
             "notes": forms.Textarea(attrs={"rows": 3}),
             "payment_terms": forms.Textarea(attrs={"rows": 3}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in ("start_date", "end_date", "next_invoice_date"):
+            self.fields[field].input_formats = ["%Y-%m-%d"]
+
     def clean(self):
         cleaned_data = super().clean()
+
         start_date = cleaned_data.get("start_date")
         end_date = cleaned_data.get("end_date")
+        next_date = cleaned_data.get("next_invoice_date")
 
-        if start_date and end_date:
-            if end_date < start_date:
-                raise ValidationError(
-                    {"end_date": "End date must be after the start date."}
-                )
+        if start_date and end_date and end_date < start_date:
+            self.add_error("end_date", "End date must be after the start date.")
+
+        if start_date and next_date and next_date < start_date:
+            self.add_error(
+                "next_invoice_date",
+                "Next invoice date cannot be before the start date.",
+            )
+
+        if end_date and next_date and next_date > end_date:
+            self.add_error(
+                "next_invoice_date",
+                "Next invoice date cannot be after the end date.",
+            )
 
         return cleaned_data
 

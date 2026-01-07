@@ -84,15 +84,18 @@ class InvoicePDF:
             try:
                 logo_path = os.path.join(settings.MEDIA_ROOT, str(company.logo))
                 if os.path.exists(logo_path):
-                    # Create image with max width, maintaining aspect ratio
-                    img = Image(logo_path)
-                    img.drawHeight = 0.75 * inch
-                    img.drawWidth = 0.75 * inch * img.imageWidth / img.imageHeight
+                    MAX_WIDTH = 2 * inch
+                    MAX_HEIGHT = 1 * inch
 
-                    # Cap the width at 2 inches max
-                    if img.drawWidth > 2 * inch:
-                        img.drawWidth = 2 * inch
-                        img.drawHeight = 2 * inch * img.imageHeight / img.imageWidth
+                    img = Image(logo_path)
+                    aspect = img.imageWidth / img.imageHeight
+
+                    if aspect >= 1:
+                        img.drawWidth = min(MAX_WIDTH, img.imageWidth)
+                        img.drawHeight = img.drawWidth / aspect
+                    else:
+                        img.drawHeight = min(MAX_HEIGHT, img.imageHeight)
+                        img.drawWidth = img.drawHeight * aspect
 
                     elements.append(img)
                     elements.append(Spacer(1, 0.3 * inch))

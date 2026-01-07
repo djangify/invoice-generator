@@ -9,145 +9,149 @@
     <!-- Favicon -->
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon" />
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
-    <!-- Navigation -->
-    <nav class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <a href="{% url 'invoices:dashboard' %}" class="text-xl font-semibold text-gray-900">
-                            Invoice Generator
-                        </a>
-                    </div>
-                    <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
-                        <a href="{% url 'invoices:dashboard' %}" 
-                           class="{% if request.resolver_match.url_name == 'dashboard' %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Dashboard
-                        </a>
-                        <a href="{% url 'invoices:invoice_list' %}" 
-                           class="{% if 'invoice' in request.resolver_match.url_name and 'recurring' not in request.resolver_match.url_name %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Invoices
-                        </a>
-                        <a href="{% url 'invoices:recurring_invoice_list' %}" 
-                           class="{% if 'recurring' in request.resolver_match.url_name %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Recurring
-                        </a>
-                        <a href="{% url 'invoices:client_list' %}" 
-                           class="{% if 'client' in request.resolver_match.url_name %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Clients
-                        </a>
-                        <a href="{% url 'invoices:company_settings' %}" 
-                           class="{% if request.resolver_match.url_name == 'company_settings' %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Settings
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- User Menu and Year Switcher -->
-                <div class="flex items-center space-x-4">
-                    {% if user.is_authenticated %}
-                    <div class="relative inline-block text-left">
-                        <button type="button" 
-                                onclick="toggleUserDropdown()"
-                                class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                                id="user-menu-button">
-                                    Menu
-                            <svg class="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                        
-                        <div id="user-dropdown" 
-                             class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                            <div class="py-1">
-                                
-                                <a href="{% url 'password_change' %}" 
-                                   class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100">
-                                    Change Password
-                                </a>
-                                <form method="post" action="{% url 'logout' %}">
-                                    {% csrf_token %}
-                                    <button type="submit" 
-                                            class="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
-                                        Sign Out
-                                    </button>
-                                </form>
-                            </div>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex">
+                        <div class="flex-shrink-0 flex items-center">
+                            <a href="{% url 'invoices:dashboard' %}" class="text-xl font-semibold text-gray-900">
+                                Invoice Generator
+                            </a>
+                        </div>
+                        <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
+                            <a href="{% url 'invoices:dashboard' %}" 
+                            class="{% if request.resolver_match.url_name == 'dashboard' %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Dashboard
+                            </a>
+                            <a href="{% url 'invoices:invoice_list' %}" 
+                            class="{% if 'invoice' in request.resolver_match.url_name and 'recurring' not in request.resolver_match.url_name %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Invoices
+                            </a>
+                            <a href="{% url 'invoices:recurring_invoice_list' %}" 
+                            class="{% if 'recurring' in request.resolver_match.url_name %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Recurring
+                            </a>
+                            <a href="{% url 'invoices:client_list' %}" 
+                            class="{% if 'client' in request.resolver_match.url_name %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Clients
+                            </a>
+                            <a href="{% url 'invoices:company_settings' %}" 
+                            class="{% if request.resolver_match.url_name == 'company_settings' %}border-gray-900 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Settings
+                            </a>
                         </div>
                     </div>
-                    {% endif %}
                     
-                    <!-- Year Switcher -->
-                    {% if active_year and all_years %}
-                    <div class="relative inline-block text-left">
-                        <button type="button" 
-                                onclick="toggleYearDropdown()"
-                                class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                                id="year-menu-button">
-                            Tax Year: {{ active_year.year_label }}
-                            <svg class="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                        
-                        <div id="year-dropdown" 
-                             class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                            <div class="py-1">
-                                {% for year in all_years %}
-                                <a href="{% url 'invoices:switch_year' year.id %}" 
-                                   class="{% if year.id == active_year.id %}bg-gray-100 text-gray-900{% else %}text-gray-700{% endif %} block px-4 py-2 text-sm hover:bg-gray-100">
-                                    {{ year.year_label }}
-                                    {% if year.id == active_year.id %}
-                                    <span class="float-right">✓</span>
-                                    {% endif %}
-                                </a>
-                                {% endfor %}
+                    <!-- User Menu and Year Switcher -->
+                    <div class="flex items-center space-x-4">
+                        {% if user.is_authenticated %}
+                        <div class="relative inline-block text-left">
+                            <button type="button" 
+                                    onclick="toggleUserDropdown()"
+                                    class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                                    id="user-menu-button">
+                                        Menu
+                                <svg class="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            
+                            <div id="user-dropdown" 
+                                class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                <div class="py-1">
+                                    
+                                    <a href="{% url 'password_change' %}" 
+                                    class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100">
+                                        Change Password
+                                    </a>
+                                    <form method="post" action="{% url 'logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="text-gray-700 block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
+                                            Sign Out
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
+                        {% endif %}
+                        
+                        <!-- Year Switcher -->
+                        {% if active_year and all_years %}
+                        <div class="relative inline-block text-left">
+                            <button type="button" 
+                                    onclick="toggleYearDropdown()"
+                                    class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                                    id="year-menu-button">
+                                Tax Year: {{ active_year.year_label }}
+                                <svg class="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            
+                            <div id="year-dropdown" 
+                                class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                <div class="py-1">
+                                    {% for year in all_years %}
+                                    <a href="{% url 'invoices:switch_year' year.id %}" 
+                                    class="{% if year.id == active_year.id %}bg-gray-100 text-gray-900{% else %}text-gray-700{% endif %} block px-4 py-2 text-sm hover:bg-gray-100">
+                                        {{ year.year_label }}
+                                        {% if year.id == active_year.id %}
+                                        <span class="float-right">✓</span>
+                                        {% endif %}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
             </div>
-        </div>
-    </nav>
+        </nav>
 
-    <!-- Messages -->
-    {% if messages %}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        {% for message in messages %}
-        <div class="rounded-md {% if message.tags == 'success' %}bg-green-50 border border-green-200{% elif message.tags == 'error' %}bg-red-50 border border-red-200{% else %}bg-blue-50 border border-blue-200{% endif %} p-4 mb-4">
-            <p class="text-sm {% if message.tags == 'success' %}text-green-800{% elif message.tags == 'error' %}text-red-800{% else %}text-blue-800{% endif %}">
-                {{ message }}
-            </p>
+        <!-- Messages -->
+        {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            {% for message in messages %}
+            <div class="rounded-md {% if message.tags == 'success' %}bg-green-50 border border-green-200{% elif message.tags == 'error' %}bg-red-50 border border-red-200{% else %}bg-blue-50 border border-blue-200{% endif %} p-4 mb-4">
+                <p class="text-sm {% if message.tags == 'success' %}text-green-800{% elif message.tags == 'error' %}text-red-800{% else %}text-blue-800{% endif %}">
+                    {{ message }}
+                </p>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-    {% endif %}
+        {% endif %}
 
-    <!-- Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
-        {% block content %}{% endblock %}
-    </main>
-<!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-16">
-        <div class="max-w-7xl mx-auto px-4 py-8">
-            <div class="text-center text-xs text-gray-500">
-                Invoice Generator {{ INVOICEG_VERSION }}
-                · A self-hosted invoicing tool.
-                <p class="mt-2 text-xs text-gray-500">
-                    Designed &amp; developed by 
-                    <a href="https://www.todiane.com" 
-                       target="_blank" 
-                       rel="noopener noreferrer"
-                       class="text-gray-700 hover:text-gray-900 underline"
-                       aria-label="Open todiane.com website in a new tab">
+        <!-- Content -->
+        <div class="flex-grow">
+            <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+        <!-- Footer -->
+        <footer class="bg-white border-t border-gray-200 mt-16">
+            <div class="max-w-7xl mx-auto px-4 py-8">
+                <div class="text-center text-xs text-gray-500">
+                    Invoice Generator {{ INVOICEG_VERSION }}
+                    · A self-hosted invoicing tool.
+                    <p class="mt-2 text-xs text-gray-500">
+                        Designed &amp; developed by 
+                        <a href="https://www.todiane.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        class="text-gray-700 hover:text-gray-900 underline"
+                        aria-label="Open todiane.com website in a new tab">
                         ToDiane.com
                     </a>
                 </p>
             </div>
         </div>
     </footer>
+</div>
     <script>
         function toggleYearDropdown() {
             const dropdown = document.getElementById('year-dropdown');

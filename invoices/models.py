@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from django.conf import settings
+from django.core.exceptions import ValidationError
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 import os
@@ -197,6 +197,21 @@ class RecurringInvoice(models.Model):
 
         return from_date
 
+    def save(self, *args, **kwargs):
+        # Auto-set next invoice date on creation
+        if not self.pk:
+            if self.start_date and not self.next_invoice_date:
+                self.next_invoice_date = self.calculate_next_date(self.start_date)
+
+        # If frequency or start_date changes, realign next date
+        else:
+            old = RecurringInvoice.objects.get(pk=self.pk)
+            if old.frequency != self.frequency or old.start_date != self.start_date:
+                self.next_invoice_date = self.calculate_next_date(self.start_date)
+
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def should_generate_invoice(self):
         """Check if it's time to generate a new invoice"""
         if self.status != "active":
@@ -208,6 +223,8 @@ class RecurringInvoice(models.Model):
         if self.end_date and date.today() > self.end_date:
             return False
 
+        if self.end_date and self.next_invoice_date > self.end_date:
+            return False
         return True
 
     def generate_invoice(self):
@@ -252,6 +269,25 @@ class RecurringInvoice(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+    def clean(self):
+        errors = {}
+
+        if self.end_date and self.end_date < self.start_date:
+            errors["end_date"] = "End date must be after the start date."
+
+        if self.next_invoice_date < self.start_date:
+            errors["next_invoice_date"] = (
+                "Next invoice date cannot be before the start date."
+            )
+
+        if self.end_date and self.next_invoice_date > self.end_date:
+            errors["next_invoice_date"] = (
+                "Next invoice date cannot be after the end date."
+            )
+
+        if errors:
+            raise ValidationError(errors)
 
 
 class RecurringInvoiceItem(models.Model):

@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ client.name }} - Invoice History{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between print:hidden">
+    <div>
+        <h1 class="text-3xl font-semibold text-gray-900">{{ client.name }}</h1>
+        <p class="mt-1 text-sm text-gray-500">Invoice History</p>
+    </div>
+    <div class="flex space-x-3">
+        <button onclick="window.print()" 
+                class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+            </svg>
+            Print
+        </button>
+        <a href="{% url 'invoices:client_invoices_pdf' client.pk %}{% if year_filter %}?year={{ year_filter }}{% endif %}" 
+           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Download PDF
+        </a>
+        <a href="{% url 'invoices:invoice_create' %}?client={{ client.pk }}" 
+           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800">
+            New Invoice
+        </a>
+    </div>
+</div>
+
+<!-- Print header (hidden on screen) -->
+<div class="hidden print:block mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Invoice History: {{ client.name }}</h1>
+    <p class="text-sm text-gray-600">
+        {% if year_filter == 'all' %}All Years{% elif year_filter %}Tax Year {{ active_year.year_label }}{% else %}Tax Year {{ active_year.year_label }}{% endif %}
+    </p>
+</div>
+
+<!-- Year Filter -->
+<div class="mb-4 flex space-x-2 print:hidden">
+    <a href="{% url 'invoices:client_invoices' client.pk %}" 
+       class="px-3 py-2 text-sm font-medium rounded-md {% if not year_filter %}bg-gray-900 text-white{% else %}bg-white text-gray-700 border border-gray-300 hover:bg-gray-50{% endif %}">
+        {{ active_year.year_label }}
+    </a>
+    <a href="?year=all" 
+       class="px-3 py-2 text-sm font-medium rounded-md {% if year_filter == 'all' %}bg-gray-900 text-white{% else %}bg-white text-gray-700 border border-gray-300 hover:bg-gray-50{% endif %}">
+        All Years
+    </a>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-3 mb-6">
+    <div class="bg-white overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
+        <div class="p-5">
+            <dt class="text-sm font-medium text-gray-500 truncate">Total Invoiced</dt>
+            <dd class="mt-1 text-2xl font-semibold text-gray-900">£{{ total_invoiced|floatformat:2 }}</dd>
+        </div>
+    </div>
+    <div class="bg-white overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
+        <div class="p-5">
+            <dt class="text-sm font-medium text-gray-500 truncate">Total Paid</dt>
+            <dd class="mt-1 text-2xl font-semibold text-green-600">£{{ total_paid|floatformat:2 }}</dd>
+        </div>
+    </div>
+    <div class="bg-white overflow-hidden border border-gray-200 rounded-lg print:border-gray-400">
+        <div class="p-5">
+            <dt class="text-sm font-medium text-gray-500 truncate">Outstanding</dt>
+            <dd class="mt-1 text-2xl font-semibold {% if total_outstanding > 0 %}text-red-600{% else %}text-gray-900{% endif %}">£{{ total_outstanding|floatformat:2 }}</dd>
+        </div>
+    </div>
+</div>
+
+<!-- Client Details (shown on print) -->
+<div class="hidden print:block mb-6 p-4 border border-gray-300 rounded">
+    <h3 class="text-sm font-medium text-gray-500 mb-2">Client Details</h3>
+    <p class="text-gray-900">{{ client.name }}</p>
+    <p class="text-sm text-gray-600">{{ client.email }}</p>
+    <p class="text-sm text-gray-600">{{ client.address_line1 }}</p>
+    {% if client.address_line2 %}<p class="text-sm text-gray-600">{{ client.address_line2 }}</p>{% endif %}
+    <p class="text-sm text-gray-600">{{ client.city }}, {{ client.postcode }}</p>
+</div>
+
+<!-- Invoice List -->
+<div class="bg-white border border-gray-200 rounded-lg overflow-hidden print:border-gray-400">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider print:hidden">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for invoice in invoices %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <a href="{% url 'invoices:invoice_detail' invoice.pk %}" class="text-gray-900 hover:text-gray-600 font-medium print:no-underline">
+                        {{ invoice.invoice_number }}
+                    </a>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.date|date:"d M Y" }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.due_date|date:"d M Y" }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">£{{ invoice.total|floatformat:2 }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-medium rounded-full 
+                        {% if invoice.status == 'paid' %}bg-green-100 text-green-800
+                        {% elif invoice.status == 'sent' %}bg-blue-100 text-blue-800
+                        {% elif invoice.status == 'overdue' %}bg-red-100 text-red-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}
+                        print:bg-transparent print:px-0">
+                        {{ invoice.get_status_display }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium print:hidden">
+                    <a href="{% url 'invoices:invoice_detail' invoice.pk %}" class="text-gray-600 hover:text-gray-900">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No invoices found for this client</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Back link -->
+<div class="mt-6 print:hidden">
+    <a href="{% url 'invoices:client_list' %}" class="text-gray-600 hover:text-gray-900 text-sm">
+        ← Back to Clients
+    </a>
+</div>
+
+<style>
+    @media print {
+        nav, .print\:hidden { display: none !important; }
+        .print\:block { display: block !important; }
+        body { background: white !important; }
+        .bg-gray-50 { background: white !important; }
+        .border-gray-200 { border-color: #d1d5db !important; }
+        .rounded-lg { border-radius: 0 !important; }
+        .shadow { box-shadow: none !important; }
+    }
+</style>
+{% endblock %}
