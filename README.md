@@ -429,3 +429,5 @@ This Invoice Generator is provided "as is" without warranty of any kind. If you 
   Made for UK self employed and sole traders<br>
   <a href="https://todiane.com/blog/invoice-generator-open-source-django">Introducing Invoice Generator</a>
 </p>
+
+Maintained by [Diane Corriette](https://github.com/todiane)
