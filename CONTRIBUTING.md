@@ -57,7 +57,7 @@ We welcome feature suggestions! Please create an issue with:
 
    ```bash
    python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   .venv\Scripts\activate
    ```
 
 3. **Install dependencies**
@@ -69,14 +69,14 @@ We welcome feature suggestions! Please create an issue with:
 4. **Set up environment**
 
    ```bash
-   cp .env.example .env
+   copy .env.example .env
    ```
 
 5. **Initialise the database**
 
    ```bash
    python manage.py migrate
-   python manage.py createsuperuser
+   python manage.py create_default_user
    ```
 
 6. **Run the development server**

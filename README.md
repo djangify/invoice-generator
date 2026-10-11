@@ -23,9 +23,7 @@ A self-hosted Django application for creating and managing invoices, tracking pa
 
   <img src="https://img.shields.io/badge/Hosting-Self--Hosted--Ready-4B5563?style=for-the-badge" alt="Self Hosted Ready">
 
-  <a href="https://www.hardenize.com/">
-    <img src="https://img.shields.io/badge/VPS%20Hosting-Self%20Managed-blue?style=for-the-badge&logo=linux&logoColor=white" alt="VPS Hosting">
-  </a>
+  <img src="https://img.shields.io/badge/Platform-Windows-0078D6?style=for-the-badge" alt="Windows">
 
 </p>
 
@@ -43,49 +41,37 @@ A self-hosted Django application for creating and managing invoices, tracking pa
 
 ## Requirements
 
-- Docker and Docker Compose
+- Windows 10 or 11
+- Docker Desktop (includes Docker Compose)
 
 OR for local development:
-- Python 3.11+
+- Python 3.12+ (the Docker image uses 3.12)
 - pip
+- Node.js, only if you change the design (the built CSS is included)
 
 ## Quick Start with Docker
 
 ### 1. Clone the Repository
 
-```bash
-git clone https://github.com/yourusername/invoice-generator.git
+```powershell
+git clone https://github.com/djangify/invoice-generator.git
 cd invoice-generator
 ```
 
 ### 2. Configure Environment
 
-```bash
-cp .env.example .env
+```powershell
+copy .env.example .env
 ```
 
-Edit `.env` with your settings:
-
-```env
-SECRET_KEY=generate-a-secure-random-string-here
-DEBUG=False
-ALLOWED_HOSTS=localhost,127.0.0.1
-CSRF_TRUSTED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
-
-DJANGO_SUPERUSER_EMAIL=your@email.com
-DJANGO_SUPERUSER_PASSWORD=your-secure-password
-
-TZ=Europe/London
-```
-
-**Generate a secret key:**
-```bash
-python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-```
+For normal local use you do not need to change anything in `.env`. The app creates its own
+secret key the first time it runs (saved in `data/secret_key.txt`) and a random password for
+your first login. Open `.env` only if you want to set your own login email, timezone or host
+names. Every setting is explained in the file.
 
 ### 3. Build and Run
 
-```bash
+```powershell
 docker compose up --build -d
 ```
 
@@ -94,7 +80,27 @@ docker compose up --build -d
 - **Application**: http://localhost:8000
 - **Admin Panel**: http://localhost:8000/admin
 
-Login with the email and password you set in `.env`
+The container only listens on this computer (`127.0.0.1`). To share it on your network, change
+`127.0.0.1:8000:8000` to `8000:8000` in `docker-compose.yml` and add your address to
+`ALLOWED_HOSTS` in `.env`.
+
+### 5. Get your first login
+
+The first time the app starts it creates your login (email `admin@example.com`, or the
+`DJANGO_SUPERUSER_EMAIL` you set in `.env`) with a random password. Show it with:
+
+```powershell
+docker compose logs web | Select-String Password
+```
+
+The same details are saved in `data/first_login.txt`. Log in, change your password on the
+password change page, then delete `data/first_login.txt`.
+
+Forgot it? Give the login a new random password:
+
+```powershell
+docker compose exec web python manage.py create_default_user --reset
+```
 
 ## First-Time Setup
 
@@ -140,17 +146,16 @@ data/
 ├── media/
 │   ├── logos/          # Company logos
 │   └── invoices/       # Generated PDF invoices (organised by tax year)
-└── logs/
-    └── django.log      # Application error logs
+├── secret_key.txt      # Generated secret key (keep private)
+└── first_login.txt     # First login details (delete after changing your password)
 ```
 
-Static files are stored in `./staticfiles/`
-
-**Important**: Back up the `./data/` directory regularly to prevent data loss.
+**Important**: Back up the `./data/` directory regularly to prevent data loss. It holds your
+invoices, client details and bank details, so keep the backups private.
 
 ## Docker Commands
 
-```bash
+```powershell
 # Start the application
 docker compose up -d
 
@@ -175,37 +180,32 @@ docker compose exec web python manage.py shell
 # Run migrations manually
 docker compose exec web python manage.py migrate
 
-# Backup database
-cp ./data/db/db.sqlite3 ./backups/db-$(date +%Y%m%d).sqlite3
+# Backup: see Backup and Restore below
 ```
 
 ## Local Development (Without Docker)
 
-```bash
+```powershell
 # Create virtual environment
 python -m venv venv
 
 # Activate virtual environment
-# Windows:
 venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Create data directories
-mkdir -p db media logs
-
-# Run migrations
+# Create the database
 python manage.py migrate
 
-# Create superuser
-python manage.py createsuperuser
+# Create your first login (prints a random password and saves it to data/first_login.txt)
+python manage.py create_default_user
 
-# Run development server
+# Run the app
 python manage.py runserver
 ```
+
+The `data/` folder is created for you. Open http://127.0.0.1:8000 and log in.
 
 ## Invoice Workflow
 
@@ -255,17 +255,17 @@ scheduler:
 ```
 
 **To check scheduler status:**
-```bash
+```powershell
 docker compose logs scheduler -f
 ```
 
 **To manually trigger recurring invoice processing:**
-```bash
+```powershell
 docker compose exec web python manage.py process_recurring_invoices
 ```
 
 **To see what would be generated (dry run):**
-```bash
+```powershell
 docker compose exec web python manage.py process_recurring_invoices --dry-run
 ```
 
@@ -274,20 +274,11 @@ docker compose exec web python manage.py process_recurring_invoices --dry-run
 For local development, you'll need to run the command manually or set up your own scheduler:
 
 **Manual processing:**
-```bash
+```powershell
 python manage.py process_recurring_invoices
 ```
 
-**Using cron (Linux/macOS):**
-```bash
-# Edit crontab
-crontab -e
-
-# Add this line to run daily at 6:00 AM
-0 6 * * * cd /path/to/invoice-generator && /path/to/venv/bin/python manage.py process_recurring_invoices >> logs/recurring.log 2>&1
-```
-
-**Using Task Scheduler (Windows):**
+**Using Task Scheduler:**
 1. Open Task Scheduler
 2. Create a Basic Task
 3. Set trigger to Daily at your preferred time
@@ -308,7 +299,7 @@ crontab -e
 ### Disabling the Scheduler
 
 If you don't need automatic recurring invoice generation, you can disable the scheduler service:
-```bash
+```powershell
 # Run only the web service
 docker compose up -d web
 ```
@@ -334,23 +325,17 @@ PDFs are stored in `./data/media/invoices/{tax-year}/`
 ## Troubleshooting
 
 ### Static files not loading
-```bash
+```powershell
 docker compose exec web python manage.py collectstatic --noinput
 ```
 
 ### Database errors after update
-```bash
+```powershell
 docker compose exec web python manage.py migrate
 ```
 
-### Permission errors on data directory
-```bash
-# Linux/macOS
-sudo chown -R $USER:$USER ./data
-```
-
 ### Container won't start
-```bash
+```powershell
 # Check logs for errors
 docker compose logs web
 
@@ -360,43 +345,51 @@ docker compose up --build -d
 ```
 
 ### Forgot admin password
-```bash
-docker compose exec web python manage.py changepassword your@email.com
+```powershell
+docker compose exec web python manage.py create_default_user --reset
 ```
+This gives the login a new random password (shown on screen and saved to `data/first_login.txt`).
+The "forgot password" email only works if you have set the `EMAIL_HOST` settings in `.env`.
 
 ## Environment Variables
 
+All optional. See `.env.example` for the full list.
+
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SECRET_KEY` | Django secret key (required for production) | Insecure default |
-| `DEBUG` | Enable debug mode | `True` |
+| `SECRET_KEY` | Django secret key | Generated once, saved in `data/secret_key.txt` |
+| `DEBUG` | Detailed error pages (development only) | `False` |
 | `ALLOWED_HOSTS` | Comma-separated list of allowed hosts | `localhost,127.0.0.1` |
-| `CSRF_TRUSTED_ORIGINS` | Comma-separated list with protocol | `http://localhost:8000` |
-| `DJANGO_SUPERUSER_EMAIL` | Auto-create admin with this email | - |
-| `DJANGO_SUPERUSER_PASSWORD` | Auto-create admin with this password | - |
+| `USE_HTTPS` | Set `True` once served over HTTPS: redirects and secure-only cookies | `False` |
+| `CSRF_TRUSTED_ORIGINS` | Comma-separated list with protocol | Built from `ALLOWED_HOSTS` |
+| `DJANGO_SUPERUSER_EMAIL` | Email for the first login | `admin@example.com` |
+| `DJANGO_SUPERUSER_PASSWORD` | Your own first password (not recommended) | Random, saved to `data/first_login.txt` |
 | `TZ` | Timezone | `Europe/London` |
+| `EMAIL_HOST` and related | SMTP settings for password-reset emails | Emails print to the console |
 
 ## Backup and Restore
 
 ### Backup
-```bash
-# Create backup directory
-mkdir -p backups
+Stop the application first so the database file is not being written to.
 
-# Backup database
-cp ./data/db/db.sqlite3 ./backups/db-$(date +%Y%m%d).sqlite3
+```powershell
+docker compose down
 
-# Backup everything
-tar -czvf backups/invoice-generator-$(date +%Y%m%d).tar.gz ./data
+# Create the backup folder and a dated copy of everything in data
+mkdir backups
+Copy-Item -Recurse .\data ".\backups\data-$(Get-Date -Format yyyyMMdd)"
+
+docker compose up -d
 ```
 
 ### Restore
-```bash
+```powershell
 # Stop the application
 docker compose down
 
-# Restore database
-cp ./backups/db-YYYYMMDD.sqlite3 ./data/db/db.sqlite3
+# Replace data with the backup you want (change the date)
+Remove-Item -Recurse -Force .\data
+Copy-Item -Recurse .\backups\data-YYYYMMDD .\data
 
 # Start the application
 docker compose up -d
@@ -406,20 +399,21 @@ docker compose up -d
 
 For production deployments:
 
-1. **Generate a strong SECRET_KEY** - Never use the default
-2. **Set DEBUG=False** - Never run debug mode in production
-3. **Use HTTPS** - Put behind a reverse proxy with SSL
+1. **Keep `DEBUG=False`** - Never run debug mode in production
+2. **Keep `data/secret_key.txt` private** - or set your own `SECRET_KEY`
+3. **Use HTTPS** - Put behind a reverse proxy with SSL, then set `USE_HTTPS=True`
 4. **Strong passwords** - Use secure passwords for admin accounts
-5. **Regular backups** - Back up the data directory regularly
-6. **Keep updated** - Update dependencies regularly
+5. **Uploads are checked** - The logo upload is verified as a real image, limited in size and dimensions, and renamed; uploaded files are only served to logged-in users
+6. **Regular backups** - Back up the data directory regularly
+7. **Keep updated** - Update dependencies regularly
 
 ## License
 
 This project is licensed under the MIT License.  
-See the [LICENSE](license.md) file for details.
+See the [LICENSE](LICENSE.md) file for details.
 
 ## Contributions are welcome.  
-Please read [CONTRIBUTING](contributing.md) before submitting a pull request.
+Please read [CONTRIBUTING](CONTRIBUTING.md) before submitting a pull request.
 
 ## DISCLAIMER
           

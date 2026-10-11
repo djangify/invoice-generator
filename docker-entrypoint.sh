@@ -7,26 +7,18 @@ python manage.py migrate --noinput
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-# Create superuser if credentials provided and user doesn't exist
-if [ -n "$DJANGO_SUPERUSER_EMAIL" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
-    echo "Checking superuser..."
-    python manage.py shell << EOF
-from django.contrib.auth import get_user_model
-User = get_user_model()
-if not User.objects.filter(email='${DJANGO_SUPERUSER_EMAIL}').exists():
-    User.objects.create_superuser(email='${DJANGO_SUPERUSER_EMAIL}', password='${DJANGO_SUPERUSER_PASSWORD}')
-    print('Superuser created.')
-else:
-    print('Superuser already exists.')
-EOF
-fi
+# Create the first login if it does not exist. If DJANGO_SUPERUSER_PASSWORD is empty a
+# random password is generated: it is printed below and saved in data/first_login.txt.
+# Credentials are read from the environment by Django, never pasted into code.
+echo "Checking first login..."
+python manage.py create_default_user
 
 # Initialize tax year
-python manage.py shell << EOF
+python manage.py shell -c "
 from invoices.models import InvoiceYear
 InvoiceYear.get_active_year()
 print('Tax year initialized.')
-EOF
+"
 
 echo "Starting server..."
 exec "$@"

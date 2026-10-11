@@ -96,13 +96,12 @@
                                 class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                                 <div class="py-1">
                                     {% for year in all_years %}
-                                    <a href="{% url 'invoices:switch_year' year.id %}" 
-                                    class="{% if year.id == active_year.id %}bg-gray-100 text-gray-900{% else %}text-gray-700{% endif %} block px-4 py-2 text-sm hover:bg-gray-100">
+                                    <form method="post" action="{% url 'invoices:switch_year' year.id %}">{% csrf_token %}<button type="submit" class="{% if year.id == active_year.id %}bg-gray-100 text-gray-900{% else %}text-gray-700{% endif %} block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left">
                                         {{ year.year_label }}
                                         {% if year.id == active_year.id %}
                                         <span class="float-right">✓</span>
                                         {% endif %}
-                                    </a>
+                                    </button></form>
                                     {% endfor %}
                                 </div>
                             </div>

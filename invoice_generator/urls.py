@@ -1,8 +1,9 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.decorators import login_required
+from django.views.static import serve as serve_media
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -45,8 +46,15 @@ urlpatterns = [
     path("", include("invoices.urls")),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Uploaded files (company logo, saved PDFs) hold business details, so they are only
+# served to logged-in users, with or without DEBUG.
+urlpatterns += [
+    re_path(
+        r"^%s(?P<path>.*)$" % settings.MEDIA_URL.lstrip("/"),
+        login_required(serve_media),
+        {"document_root": settings.MEDIA_ROOT},
+    ),
+]
 
 admin.site.site_header = "Invoice Generator"
 admin.site.site_title = "Invoice Generator"

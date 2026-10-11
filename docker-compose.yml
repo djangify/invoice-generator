@@ -6,12 +6,11 @@ services:
     env_file:
       - .env
     volumes:
-      - ./data/media:/app/media
-      - ./data/db:/app/data/db
-      - ./data/logs:/app/logs
-      - ./staticfiles:/app/staticfiles
+      # database, logo, saved PDFs and the generated keys / first_login.txt
+      - ./data:/app/data
     ports:
-      - "8000:8000"
+      # Only reachable from this computer. Change to "8000:8000" to share on your network.
+      - "127.0.0.1:8000:8000"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health/" ]
       interval: 30s
@@ -29,9 +28,7 @@ services:
       - SCHEDULE_HOUR=6
       - SCHEDULE_MINUTE=0
     volumes:
-      - ./data/media:/app/media
-      - ./data/db:/app/data/db
-      - ./data/logs:/app/logs
+      - ./data:/app/data
     depends_on:
       web:
         condition: service_healthy

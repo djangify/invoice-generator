@@ -9,6 +9,7 @@ from .models import (
 )
 from django.forms import inlineformset_factory
 from django.core.exceptions import ValidationError
+from secure_uploads.forms import SecureImageUploadMixin
 
 
 class ClientForm(forms.ModelForm):
@@ -166,7 +167,11 @@ RecurringInvoiceItemFormSet = inlineformset_factory(
 )
 
 
-class CompanySettingsForm(forms.ModelForm):
+class CompanySettingsForm(SecureImageUploadMixin, forms.ModelForm):
+    # The logo is checked for real image content, size and dimensions, and its
+    # filename is replaced with a random one (see secure_uploads).
+    image_fields = ["logo"]
+
     class Meta:
         model = CompanySettings
         fields = [

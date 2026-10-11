@@ -5,24 +5,56 @@ import environ
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Where user data (database, logos, PDFs, generated keys) is stored. In Docker this
+# folder is the ./data volume, so it survives rebuilds.
+DATA_DIR = BASE_DIR / "data"
+(DATA_DIR / "db").mkdir(parents=True, exist_ok=True)
+(DATA_DIR / "media").mkdir(parents=True, exist_ok=True)
+
 env = environ.Env()
-env.read_env(BASE_DIR / ".env")
+env_file = BASE_DIR / ".env"
+if env_file.exists():
+    environ.Env.read_env(str(env_file))
 
-SECRET_KEY = env("SECRET_KEY", default="unsafe-secret-key-change-in-production")
+# SECRET_KEY: use the environment/.env value if set. Otherwise generate a random
+# per-install key once and keep it in the data folder, so there is never a public
+# default key in use.
+SECRET_KEY = env("SECRET_KEY", default="")
+if not SECRET_KEY:
+    from django.core.management.utils import get_random_secret_key
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+    _secret_file = DATA_DIR / "secret_key.txt"
+    if _secret_file.exists():
+        SECRET_KEY = _secret_file.read_text(encoding="utf-8").strip()
+    if not SECRET_KEY:
+        SECRET_KEY = get_random_secret_key()
+        _secret_file.write_text(SECRET_KEY, encoding="utf-8")
+        try:
+            os.chmod(_secret_file, 0o600)  # best-effort; no-op on some Windows setups
+        except OSError:
+            pass
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-]
+# Off unless you turn it on. Debug pages show settings and stack traces.
+DEBUG = env.bool("DEBUG", default=False)
 
-# CSRF and CORS - read from environment with sensible defaults
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-]
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+
+# Set USE_HTTPS=True once the app is served over HTTPS (for example behind a Caddy or
+# nginx reverse proxy). It turns on HTTPS redirects and secure-only cookies, which
+# stop the app working over plain http, so it is off by default.
+USE_HTTPS = env.bool("USE_HTTPS", default=False)
+
+# Origins allowed to submit forms. Defaults to the ALLOWED_HOSTS on port 8000 (http),
+# or on https when USE_HTTPS is on. Set CSRF_TRUSTED_ORIGINS to override.
+_hosts = [h for h in ALLOWED_HOSTS if h != "*"]
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=(
+        [f"https://{h}" for h in _hosts]
+        if USE_HTTPS
+        else [f"http://{h}:8000" for h in _hosts]
+    ),
+)
 
 
 # Application definition
@@ -41,6 +73,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "secure_uploads.middleware.SecureUploadMiddleware",
+    "secure_uploads.middleware.ContentSecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -72,7 +107,7 @@ WSGI_APPLICATION = "invoice_generator.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "data" / "db" / "db.sqlite3",
+        "NAME": DATA_DIR / "db" / "db.sqlite3",
     }
 }
 
@@ -88,26 +123,39 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "invoices:dashboard"
 LOGOUT_REDIRECT_URL = "login"
 
-# Email backend (console for development, configure SMTP for production)
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# First login, created on first run by `manage.py create_default_user`. Leave the
+# password empty and a random one is generated and saved to data/first_login.txt.
+DEFAULT_USER_EMAIL = env("DJANGO_SUPERUSER_EMAIL", default="admin@example.com")
+DEFAULT_USER_PASSWORD = env("DJANGO_SUPERUSER_PASSWORD", default="")
 
-# For production, use something like:
-# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-# EMAIL_HOST = "smtp.your-provider.com"
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = "your-email@example.com"
-# EMAIL_HOST_PASSWORD = "your-password"
-# DEFAULT_FROM_EMAIL = "Invoice Generator <noreply@example.com>"
+# Email: SMTP when EMAIL_HOST is set, otherwise messages print to the console (so
+# password-reset emails are not delivered; use `changepassword` instead, see README).
+_email_host = env("EMAIL_HOST", default="")
+if _email_host:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = _email_host
+    EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+    EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+    EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+    EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+    EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
+    DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Media files (digital products)
+# Let WhiteNoise find static files in the source folders, so the app is styled even
+# if collectstatic has not been run (for example with `manage.py runserver`).
+WHITENOISE_USE_FINDERS = True
+
+# Media files (company logo, generated PDFs). Served only to logged-in users, see
+# invoice_generator/urls.py.
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = DATA_DIR / "media"
 # Create invoices directory structure
 INVOICES_ROOT = MEDIA_ROOT / "invoices"
 
@@ -121,8 +169,16 @@ STORAGES = {
     },
 }
 
-# Cache static files for 1 year
-WHITENOISE_MAX_AGE = 31536000  # 1 year in seconds
+# Static files are compressed but NOT given hashed names, so WhiteNoise's default
+# (short) cache time is kept on purpose: a long cache would leave browsers showing
+# stale CSS after an update.
+
+# Production security (only when the app is served over HTTPS)
+if not DEBUG and USE_HTTPS:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 
 # Password validation
@@ -169,3 +225,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 #         },
 #     },
 # }
+
+# Upload security (see secure_uploads/). The only upload is the company logo.
+SECURE_UPLOAD_MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+SECURE_UPLOAD_MAX_IMAGE_DIMENSIONS = (4096, 4096)
+SECURE_UPLOAD_MIN_IMAGE_DIMENSIONS = (10, 10)
+SECURE_UPLOAD_ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"]
+SECURE_UPLOAD_ALLOWED_IMAGE_MIME_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+]
+SECURE_UPLOAD_SANITISE_FILENAMES = True  # Replace filenames with random ones

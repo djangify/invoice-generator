@@ -19,7 +19,7 @@ COPY . .
 RUN chmod +x /app/scheduler.sh
 
 # Create directories
-RUN mkdir -p /app/db /app/media /app/logs /app/staticfiles
+RUN mkdir -p /app/data /app/staticfiles
 
 # Copy and set entrypoint
 COPY docker-entrypoint.sh /docker-entrypoint.sh

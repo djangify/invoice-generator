@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from invoices.models import (
     RecurringInvoice,
     InvoiceYear,
@@ -141,6 +142,7 @@ def recurring_invoice_delete(request, pk):
 
 
 @login_required
+@require_POST
 def recurring_invoice_generate(request, pk):
     """Manually generate an invoice from a recurring template"""
     recurring_invoice = get_object_or_404(RecurringInvoice, pk=pk)
@@ -164,6 +166,7 @@ def recurring_invoice_generate(request, pk):
 
 
 @login_required
+@require_POST
 def recurring_invoice_pause(request, pk):
     """Pause a recurring invoice"""
     recurring_invoice = get_object_or_404(RecurringInvoice, pk=pk)
@@ -177,6 +180,7 @@ def recurring_invoice_pause(request, pk):
 
 
 @login_required
+@require_POST
 def recurring_invoice_resume(request, pk):
     """Resume a recurring invoice"""
     recurring_invoice = get_object_or_404(RecurringInvoice, pk=pk)

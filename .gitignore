@@ -45,13 +45,14 @@ lib64/
 # --- Static and media ---
 media/
 staticfiles/
-static/
+# collectstatic copies of third-party admin files (the app's own static/css,
+# static/images and static/src ARE tracked so a fresh clone is styled)
+static/admin/
+static/adminita/
 export.json
 
 # --- Node / Tailwind ---
 node_modules/
-package-lock.json
-package.json
 tailwind.config.js
 
 # --- OS / Misc ---
@@ -110,10 +111,6 @@ data/db/
 data/logs/
 !data/media/.gitkeep
 !data/db/.gitkeep
-static/images
-/static/images
-package-lock.json
-package.json
 ruff.toml
 data/logs/*.log
 

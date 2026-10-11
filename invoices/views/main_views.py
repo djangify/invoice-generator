@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from invoices.models import (
     Client,
     Invoice,
@@ -15,6 +16,7 @@ from django.http import JsonResponse
 
 
 @login_required
+@require_POST
 def switch_year(request, year_id):
     """Switch the active year for the session"""
     year = get_object_or_404(InvoiceYear, id=year_id)

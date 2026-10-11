@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.http import HttpResponse
 from invoices.models import (
     Invoice,
@@ -150,6 +151,7 @@ def invoice_pdf(request, pk):
 
 
 @login_required
+@require_POST
 def invoice_regenerate_pdf(request, pk):
     """Regenerate and save invoice PDF"""
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -166,6 +168,7 @@ def invoice_regenerate_pdf(request, pk):
 
 
 @login_required
+@require_POST
 def invoice_mark_paid(request, pk):
     """Quick action to mark invoice as paid"""
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -181,6 +184,7 @@ def invoice_mark_paid(request, pk):
 
 
 @login_required
+@require_POST
 def invoice_mark_sent(request, pk):
     """Quick action to mark invoice as sent"""
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -195,6 +199,7 @@ def invoice_mark_sent(request, pk):
 
 
 @login_required
+@require_POST
 def invoice_duplicate(request, pk):
     """Duplicate an existing invoice"""
     original = get_object_or_404(Invoice, pk=pk)
