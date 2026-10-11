@@ -5,10 +5,16 @@
 {% block content %}
 <div class="mb-6 flex items-center justify-between">
     <h1 class="text-3xl font-semibold text-gray-900">Invoices</h1>
-    <a href="{% url 'invoices:invoice_create' %}" 
-       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800">
-        New Invoice
-    </a>
+    <div class="flex space-x-3">
+        <a href="{% url 'invoices:invoice_export_csv' %}{% if request.GET.status %}?status={{ request.GET.status|urlencode }}{% endif %}"
+           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Export CSV
+        </a>
+        <a href="{% url 'invoices:invoice_create' %}"
+           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800">
+            New Invoice
+        </a>
+    </div>
 </div>
 
 <!-- Filter by status -->

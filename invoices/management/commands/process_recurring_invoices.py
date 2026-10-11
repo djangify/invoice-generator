@@ -11,7 +11,7 @@ Usage:
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from invoices.models import RecurringInvoice
+from invoices.models import Invoice, RecurringInvoice
 
 
 class Command(BaseCommand):
@@ -31,6 +31,11 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.WARNING("DRY RUN - No invoices will be created\n")
             )
+
+        # Sent invoices past their due date become Overdue
+        if not dry_run:
+            overdue_count = Invoice.mark_overdue()
+            self.stdout.write(f"Marked {overdue_count} invoice(s) overdue.\n")
 
         # Get all active recurring invoices
         recurring_invoices = RecurringInvoice.objects.filter(status="active")

@@ -15,6 +15,7 @@ from .client import (
 
 from .invoice import (
     invoice_list,
+    invoice_export_csv,
     invoice_detail,
     invoice_create,
     invoice_edit,

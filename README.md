@@ -33,6 +33,8 @@ A Django application you run on your own computer for creating and managing invo
 - **Recurring Invoices** - Set up weekly, monthly, quarterly, or yearly recurring invoice templates
 - **Tax Year Tracking** - Organise invoices by UK tax year (6 April to 5 April)
 - **Quick Actions** - Mark invoices as Sent or Paid with one click
+- **Overdue Tracking** - Sent invoices past their due date are marked Overdue automatically
+- **CSV Export** - Download a tax year's invoices (or just one status) for your accountant or a spreadsheet
 - **Duplicate Invoices** - Clone existing invoices for repeat billing
 - **Email Invoice** - One click opens your email program with a ready-written message to the client (attach the PDF and send)
 - **Client History** - View all invoices for a specific client with totals and PDF export
@@ -88,6 +90,9 @@ or the `DJANGO_SUPERUSER_EMAIL` you set in `.env`) and saves the same details in
 
 ### 5. Run the app
 
+Double-click `start.bat` in the `invoice-generator` folder. It updates the database, creates
+your login if it does not exist yet, and starts the app. Or run the commands yourself:
+
 ```powershell
 python manage.py runserver
 ```
@@ -96,13 +101,7 @@ Open http://127.0.0.1:8000 and log in. The admin panel is at http://127.0.0.1:80
 
 ### Starting it again later
 
-```powershell
-cd invoice-generator
-venv\Scripts\activate
-python manage.py runserver
-```
-
-Press Ctrl+C in the PowerShell window to stop it.
+Double-click `start.bat`. Close its window, or press Ctrl+C in it, to stop the app.
 
 ### Forgot your password?
 
@@ -168,7 +167,7 @@ invoices, client details and bank details, so keep the backups private.
 1. **Draft** - Invoice is created but not yet sent
 2. **Sent** - Invoice has been sent to the client
 3. **Paid** - Client has paid the invoice
-4. **Overdue** - Invoice is past due date and unpaid
+4. **Overdue** - A sent invoice that is past its due date. This is set for you whenever you open the dashboard or invoice list, and each time the daily recurring invoice task runs. Drafts are never marked overdue
 
 Use the quick action buttons on the invoice list or detail page to change status.
 
@@ -196,17 +195,17 @@ To generate an invoice from a template:
 
 ## Recurring Invoice Automation
 
-Recurring invoices are created when you run one command, so set Windows Task Scheduler to run
-it every day. The app does not need to be open for this.
+Recurring invoices are created by running `run-recurring.bat`, so set Windows Task Scheduler to
+run it every day. The app does not need to be open for this. The same run also marks overdue
+invoices, and adds what it did to `data\recurring.log`.
 
 **Using Task Scheduler:**
 1. Open Task Scheduler
 2. Create a Basic Task
 3. Set trigger to Daily at your preferred time
 4. Action: Start a program
-5. Program: `C:\path\to\invoice-generator\venv\Scripts\python.exe`
-6. Arguments: `manage.py process_recurring_invoices`
-7. Start in: `C:\path\to\invoice-generator`
+5. Program: `C:\path\to\invoice-generator\run-recurring.bat`
+6. Start in: `C:\path\to\invoice-generator`
 
 **To run it by hand:**
 ```powershell

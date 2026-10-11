@@ -32,7 +32,8 @@ Pick one, open an issue to say you are working on it, then send a pull request.
    `invoices/pdf_generator.py`, `invoices/admin.py`, `invoices/views/client.py`, the email
    text in `invoices/models.py` and most templates. A currency setting and a tax year start
    date would make the app usable outside the UK. It needs a way to move existing invoices
-   to the new years, and tests for dates either side of the year boundary.
+   to the new years, and tests for dates either side of the new year boundary (the UK
+   ones are in `invoices/tests.py`).
 3. **Send the email from the app.** The **Email Invoice** button only opens the user's own
    email program, so the PDF has to be attached by hand. Sending from the app with the PDF
    attached would need SMTP settings, with the password stored encrypted and never shown
@@ -40,29 +41,15 @@ Pick one, open an issue to say you are working on it, then send a pull request.
 
 **Medium**
 
-4. **Mark invoices overdue automatically.** There is an Overdue status, but nothing sets it:
-   an unpaid invoice stays Sent after its due date unless someone changes it by hand. A
-   check in the dashboard or in `process_recurring_invoices` that moves unpaid invoices past
-   their due date to Overdue would fix that. It needs tests.
-5. **CSV export.** Export the invoices for a tax year (number, client, dates, subtotal, VAT,
-   total, status) so people can give them to an accountant or open them in a spreadsheet.
-6. **Part payments.** Today an invoice is either paid or not. Recording a payment amount and
+4. **Part payments.** Today an invoice is either paid or not. Recording a payment amount and
    date, and showing the balance still owed, would help with deposits and instalments.
-7. **Back up now, and restore.** A button in Settings to make a backup of the `data` folder
+5. **Back up now, and restore.** A button in Settings to make a backup of the `data` folder
    straight away, and a way to restore one. Today both are done by copying files by hand.
 
 **Good first issues**
 
-8. **Tests for recurring invoices and tax years.** The tests cover totals, login, the email
-   link, the logo upload and the first login, but not recurring invoices or the tax year
-   dates. Useful cases: monthly dates at the end of the month (31 January), the end date
-   stopping new invoices, running `process_recurring_invoices` twice without making
-   duplicates, and 5 April and 6 April landing in the right tax year.
-9. **Start scripts for Windows.** A `start.bat` that activates the virtual environment and
-   runs the server, and a `run-recurring.bat` that Task Scheduler can call, so nobody has to
-   type the commands each time.
-10. **Screenshots for the README.** The README has one image. Clear screenshots of the
-    dashboard, an invoice and the PDF would help new users.
+6. **Screenshots for the README.** The README has one image. Clear screenshots of the
+   dashboard, an invoice and the PDF would help new users.
 
 ## Set up
 

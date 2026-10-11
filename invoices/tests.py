@@ -1,16 +1,26 @@
+import csv
 import io
-from datetime import date
+import tempfile
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.core.management import call_command
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from PIL import Image
 
 from invoices.forms import CompanySettingsForm
-from invoices.models import Client, Invoice, InvoiceItem
+from invoices.models import (
+    Client,
+    Invoice,
+    InvoiceItem,
+    InvoiceYear,
+    RecurringInvoice,
+    RecurringInvoiceItem,
+)
 
 
 class InvoiceTestBase(TestCase):
@@ -205,3 +215,229 @@ class LogoUploadSecurityTests(TestCase):
         response = self.client.get("/media/does-not-exist.txt")
         self.assertEqual(response["X-Content-Type-Options"], "nosniff")
         self.assertEqual(response["Content-Security-Policy"], "default-src 'none'")
+
+
+class TempMediaMixin:
+    """Keep any PDFs a test creates out of the real data/media folder."""
+
+    def setUp(self):
+        super().setUp()
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        override = override_settings(MEDIA_ROOT=tmp.name)
+        override.enable()
+        self.addCleanup(override.disable)
+
+
+class TaxYearTests(TestCase):
+    def test_year_boundaries(self):
+        cases = {
+            date(2026, 1, 1): 2025,
+            date(2026, 4, 5): 2025,  # last day of the 2025-26 tax year
+            date(2026, 4, 6): 2026,  # first day of the 2026-27 tax year
+            date(2026, 12, 31): 2026,
+        }
+        for day, expected_start in cases.items():
+            self.assertEqual(InvoiceYear.get_year_for_date(day).year_start, expected_start, day)
+
+    def test_year_dates_and_label(self):
+        year = InvoiceYear.get_year_for_date(date(2026, 5, 1))
+        self.assertEqual(year.start_date, date(2026, 4, 6))
+        self.assertEqual(year.end_date, date(2027, 4, 5))
+        self.assertEqual(year.year_label, "2026-27")
+
+    def test_invoice_gets_the_right_tax_year(self):
+        client = Client.objects.create(name="C", email="c@example.com")
+        before = Invoice.objects.create(client=client, date=date(2026, 4, 5), due_date=date(2026, 5, 5))
+        after = Invoice.objects.create(client=client, date=date(2026, 4, 6), due_date=date(2026, 5, 6))
+        self.assertEqual(before.tax_year.year_label, "2025-26")
+        self.assertEqual(after.tax_year.year_label, "2026-27")
+
+
+class RecurringDatesTests(InvoiceTestBase):
+    def make(self, **kwargs):
+        defaults = dict(
+            client=self.client_obj,
+            frequency="monthly",
+            start_date=date(2026, 1, 31),
+            next_invoice_date=date(2026, 1, 31),
+        )
+        defaults.update(kwargs)
+        return RecurringInvoice.objects.create(**defaults)
+
+    def test_monthly_from_the_31st_does_not_drift_to_the_28th(self):
+        recurring = self.make()
+        day = date(2026, 1, 31)
+        seen = []
+        for _ in range(4):
+            day = recurring.calculate_next_date(day)
+            seen.append(day)
+        self.assertEqual(
+            seen, [date(2026, 2, 28), date(2026, 3, 31), date(2026, 4, 30), date(2026, 5, 31)]
+        )
+
+    def test_weekly_quarterly_and_yearly(self):
+        weekly = self.make(frequency="weekly", start_date=date(2026, 3, 2), next_invoice_date=date(2026, 3, 2))
+        self.assertEqual(weekly.calculate_next_date(date(2026, 3, 2)), date(2026, 3, 9))
+        quarterly = self.make(frequency="quarterly", start_date=date(2026, 11, 30), next_invoice_date=date(2026, 11, 30))
+        self.assertEqual(quarterly.calculate_next_date(date(2026, 11, 30)), date(2027, 2, 28))
+        yearly = self.make(frequency="yearly", start_date=date(2028, 2, 29), next_invoice_date=date(2028, 2, 29))
+        self.assertEqual(yearly.calculate_next_date(date(2028, 2, 29)), date(2029, 2, 28))
+        self.assertEqual(yearly.calculate_next_date(date(2031, 2, 28)), date(2032, 2, 29))
+
+
+class RecurringGenerationTests(TempMediaMixin, InvoiceTestBase):
+    def make(self, **kwargs):
+        today = date.today()
+        defaults = dict(
+            client=self.client_obj,
+            frequency="monthly",
+            start_date=today - timedelta(days=60),
+            next_invoice_date=today,
+        )
+        defaults.update(kwargs)
+        recurring = RecurringInvoice.objects.create(**defaults)
+        RecurringInvoiceItem.objects.create(
+            recurring_invoice=recurring, description="Retainer", quantity=1, rate=100, vat_rate=20
+        )
+        return recurring
+
+    def test_generates_a_draft_with_items_and_moves_the_date_on(self):
+        recurring = self.make()
+        before = Invoice.objects.count()
+        invoice = recurring.generate_invoice()
+        self.assertEqual(Invoice.objects.count(), before + 1)
+        self.assertEqual(invoice.status, "draft")
+        self.assertEqual(invoice.items.count(), 1)
+        self.assertEqual(invoice.total(), Decimal("120.00"))
+        self.assertTrue(invoice.pdf_file)
+        recurring.refresh_from_db()
+        self.assertGreater(recurring.next_invoice_date, date.today())
+
+    def test_running_twice_does_not_make_a_duplicate(self):
+        self.make()
+        before = Invoice.objects.count()
+        call_command("process_recurring_invoices", stdout=io.StringIO())
+        call_command("process_recurring_invoices", stdout=io.StringIO())
+        self.assertEqual(Invoice.objects.count(), before + 1)
+
+    def test_not_due_paused_and_ended_are_skipped(self):
+        not_due = self.make(next_invoice_date=date.today() + timedelta(days=5))
+        paused = self.make(status="paused")
+        self.assertFalse(not_due.should_generate_invoice())
+        self.assertFalse(paused.should_generate_invoice())
+        self.assertIsNone(paused.generate_invoice())
+
+    def test_last_invoice_before_the_end_date_is_made_once_only(self):
+        # The end date is today, so this is the final invoice. Generating it must
+        # succeed and must not make another one on the next run.
+        recurring = self.make(end_date=date.today())
+        before = Invoice.objects.count()
+        self.assertIsNotNone(recurring.generate_invoice())
+        recurring.refresh_from_db()
+        self.assertFalse(recurring.should_generate_invoice())
+        call_command("process_recurring_invoices", stdout=io.StringIO())
+        self.assertEqual(Invoice.objects.count(), before + 1)
+
+
+class OverdueTests(TestCase):
+    def setUp(self):
+        self.client_obj = Client.objects.create(name="C", email="c@example.com")
+        self.today = date(2026, 6, 15)
+
+    def invoice(self, status, due):
+        return Invoice.objects.create(
+            client=self.client_obj, date=date(2026, 5, 1), due_date=due, status=status
+        )
+
+    def test_only_sent_invoices_past_their_due_date_become_overdue(self):
+        late_sent = self.invoice("sent", date(2026, 6, 14))
+        due_today = self.invoice("sent", date(2026, 6, 15))
+        late_draft = self.invoice("draft", date(2026, 6, 1))
+        late_paid = self.invoice("paid", date(2026, 6, 1))
+        changed = Invoice.mark_overdue(today=self.today)
+        self.assertEqual(changed, 1)
+        for invoice, expected in [
+            (late_sent, "overdue"),
+            (due_today, "sent"),
+            (late_draft, "draft"),
+            (late_paid, "paid"),
+        ]:
+            invoice.refresh_from_db()
+            self.assertEqual(invoice.status, expected)
+
+    def test_dashboard_and_list_mark_invoices_overdue(self):
+        user = get_user_model().objects.create_user(email="u@example.com", password="x-pass-12345")
+        self.client.force_login(user)
+        invoice = Invoice.objects.create(
+            client=self.client_obj,
+            date=date.today() - timedelta(days=60),
+            due_date=date.today() - timedelta(days=30),
+            status="sent",
+        )
+        self.client.get(reverse("invoices:dashboard"))
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.status, "overdue")
+
+
+class CsvExportTests(InvoiceTestBase):
+    def setUp(self):
+        self.client.force_login(self.user)
+        self.url = reverse("invoices:invoice_export_csv")
+
+    def rows(self, response):
+        text = response.content.decode("utf-8-sig")
+        return list(csv.reader(io.StringIO(text)))
+
+    def test_requires_login(self):
+        self.client.logout()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response["Location"])
+
+    def test_exports_the_active_year(self):
+        # InvoiceTestBase makes a May 2026 invoice, which is in tax year 2026-27.
+        session = self.client.session
+        session["active_year_id"] = self.invoice.tax_year_id
+        session.save()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/csv", response["Content-Type"])
+        self.assertIn("invoices-2026-27.csv", response["Content-Disposition"])
+        self.assertTrue(response.content.startswith(b"\xef\xbb\xbf"))
+        rows = self.rows(response)
+        self.assertEqual(rows[0][0], "Invoice number")
+        self.assertEqual(
+            rows[1],
+            [
+                self.invoice.invoice_number,
+                "Test Client",
+                "c@example.com",
+                "2026-05-01",
+                "2026-05-31",
+                "Draft",
+                "25.00",
+                "4.00",
+                "29.00",
+            ],
+        )
+
+    def test_status_filter_is_applied(self):
+        session = self.client.session
+        session["active_year_id"] = self.invoice.tax_year_id
+        session.save()
+        rows = self.rows(self.client.get(self.url + "?status=paid"))
+        self.assertEqual(len(rows), 1)  # headings only
+
+    def test_spreadsheet_formulas_in_names_are_neutralised(self):
+        self.client_obj.name = "=HYPERLINK(\"http://evil.test\",\"x\")"
+        self.client_obj.save()
+        session = self.client.session
+        session["active_year_id"] = self.invoice.tax_year_id
+        session.save()
+        rows = self.rows(self.client.get(self.url))
+        self.assertTrue(rows[1][1].startswith("'="))
+
+    def test_export_button_on_invoice_list(self):
+        response = self.client.get(reverse("invoices:invoice_list"))
+        self.assertContains(response, "Export CSV")

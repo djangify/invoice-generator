@@ -30,6 +30,8 @@ def dashboard(request):
     active_year = get_active_year(request)
     all_years = InvoiceYear.objects.all()
 
+    Invoice.mark_overdue()
+
     # Filter invoices by active year
     year_invoices = Invoice.objects.filter(tax_year=active_year)
 

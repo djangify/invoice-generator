@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
+import calendar
 import os
 from urllib.parse import quote
 
@@ -189,14 +190,17 @@ class RecurringInvoice(models.Model):
 
         if self.frequency == "weekly":
             return from_date + timedelta(weeks=1)
-        elif self.frequency == "monthly":
-            return from_date + relativedelta(months=1)
-        elif self.frequency == "quarterly":
-            return from_date + relativedelta(months=3)
-        elif self.frequency == "yearly":
-            return from_date + relativedelta(years=1)
 
-        return from_date
+        months = {"monthly": 1, "quarterly": 3, "yearly": 12}.get(self.frequency)
+        if months is None:
+            return from_date
+
+        # Keep to the day of the month the schedule started on. Without this, an
+        # invoice starting on the 31st would move to the 28th in February and stay
+        # there for good. In shorter months it falls on the last day instead.
+        next_date = from_date + relativedelta(months=months)
+        last_day = calendar.monthrange(next_date.year, next_date.month)[1]
+        return next_date.replace(day=min(self.start_date.day, last_day))
 
     def save(self, *args, **kwargs):
         # Auto-set next invoice date on creation
@@ -262,9 +266,14 @@ class RecurringInvoice(models.Model):
         # Generate PDF
         invoice.generate_and_save_pdf()
 
-        # Update next invoice date
+        # Update next invoice date. For the last invoice this goes past the end date,
+        # which is how the schedule ends, so it is saved without the form check that
+        # forbids it. Otherwise the save fails, the date stays put and the next daily
+        # run makes the same invoice again.
         self.next_invoice_date = self.calculate_next_date()
-        self.save()
+        RecurringInvoice.objects.filter(pk=self.pk).update(
+            next_invoice_date=self.next_invoice_date
+        )
 
         return invoice
 
@@ -377,6 +386,21 @@ class Invoice(models.Model):
                 pass
 
         super().save(*args, **kwargs)
+
+    @classmethod
+    def mark_overdue(cls, today=None):
+        """Move sent invoices that are past their due date to Overdue.
+
+        Drafts are left alone (they have not been sent), and so are paid invoices.
+        Each invoice is saved one by one so its PDF, which prints the status, is
+        cleared and gets regenerated. Returns how many were changed.
+        """
+        today = today or date.today()
+        overdue = list(cls.objects.filter(status="sent", due_date__lt=today))
+        for invoice in overdue:
+            invoice.status = "overdue"
+            invoice.save()
+        return len(overdue)
 
     def generate_invoice_number(self):
         year = self.date.year
