@@ -197,7 +197,7 @@ Add multi-currency support to invoices
 
 Fix PDF generation for logos with transparency
 
-Update README with Docker deployment instructions
+Update README with Task Scheduler instructions
 ```
 
 **Bad examples:**

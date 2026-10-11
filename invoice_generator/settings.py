@@ -5,8 +5,7 @@ import environ
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Where user data (database, logos, PDFs, generated keys) is stored. In Docker this
-# folder is the ./data volume, so it survives rebuilds.
+# Where user data (database, logos, PDFs, generated keys) is stored.
 DATA_DIR = BASE_DIR / "data"
 (DATA_DIR / "db").mkdir(parents=True, exist_ok=True)
 (DATA_DIR / "media").mkdir(parents=True, exist_ok=True)
@@ -39,22 +38,9 @@ DEBUG = env.bool("DEBUG", default=False)
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
-# Set USE_HTTPS=True once the app is served over HTTPS (for example behind a Caddy or
-# nginx reverse proxy). It turns on HTTPS redirects and secure-only cookies, which
-# stop the app working over plain http, so it is off by default.
-USE_HTTPS = env.bool("USE_HTTPS", default=False)
-
-# Origins allowed to submit forms. Defaults to the ALLOWED_HOSTS on port 8000 (http),
-# or on https when USE_HTTPS is on. Set CSRF_TRUSTED_ORIGINS to override.
+# Origins allowed to submit forms: the ALLOWED_HOSTS on port 8000.
 _hosts = [h for h in ALLOWED_HOSTS if h != "*"]
-CSRF_TRUSTED_ORIGINS = env.list(
-    "CSRF_TRUSTED_ORIGINS",
-    default=(
-        [f"https://{h}" for h in _hosts]
-        if USE_HTTPS
-        else [f"http://{h}:8000" for h in _hosts]
-    ),
-)
+CSRF_TRUSTED_ORIGINS = [f"http://{h}:8000" for h in _hosts]
 
 
 # Application definition
@@ -172,13 +158,6 @@ STORAGES = {
 # Static files are compressed but NOT given hashed names, so WhiteNoise's default
 # (short) cache time is kept on purpose: a long cache would leave browsers showing
 # stale CSS after an update.
-
-# Production security (only when the app is served over HTTPS)
-if not DEBUG and USE_HTTPS:
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
 
 
 # Password validation

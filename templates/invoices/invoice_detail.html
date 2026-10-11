@@ -17,6 +17,10 @@
            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             Download PDF
         </a>
+        <a href="{{ invoice.mailto_link }}"
+           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Email Invoice
+        </a>
         {% if invoice.pdf_needs_regeneration %}
         <form method="post" action="{% url 'invoices:invoice_regenerate_pdf' invoice.pk %}" class="inline">{% csrf_token %}<button type="submit" class="inline-flex items-center px-4 py-2 border border-yellow-300 text-sm font-medium rounded-md text-yellow-700 bg-yellow-50 hover:bg-yellow-100">Regenerate PDF</button></form>
         {% endif %}
@@ -26,6 +30,8 @@
         </a>
     </div>
 </div>
+
+<p class="mb-4 -mt-3 text-right text-xs text-gray-500">Email Invoice opens your email program with the details filled in. Download the PDF and attach it before you send.</p>
 
 {% if invoice.pdf_file and invoice.pdf_generated_at %}
 <div class="mb-4 bg-green-50 border border-green-200 rounded-md p-3">

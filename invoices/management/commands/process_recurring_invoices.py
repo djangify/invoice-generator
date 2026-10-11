@@ -2,7 +2,7 @@
 Management command to process recurring invoices.
 
 This command checks all active recurring invoices and generates
-any that are due. Run this daily via cron or a scheduler.
+any that are due. Run this daily with Windows Task Scheduler (see the README).
 
 Usage:
     python manage.py process_recurring_invoices

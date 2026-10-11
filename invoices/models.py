@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 import os
+from urllib.parse import quote
 
 
 class InvoiceYear(models.Model):
@@ -430,6 +431,53 @@ class Invoice(models.Model):
         if self.updated_at > self.pdf_generated_at:
             return True
         return False
+
+    def email_subject(self):
+        company = CompanySettings.objects.first()
+        who = f" from {company.company_name}" if company else ""
+        return f"Invoice {self.invoice_number}{who}"
+
+    def email_body(self):
+        """Plain-text email the user can send. The PDF is attached by the user."""
+        company = CompanySettings.objects.first()
+        lines = [
+            f"Hello {self.client.name},",
+            "",
+            f"Please find attached invoice {self.invoice_number}.",
+            "",
+            f"Invoice date: {self.date:%d %B %Y}",
+            f"Due date: {self.due_date:%d %B %Y}",
+            f"Total due: \u00a3{self.total():,.2f}",
+        ]
+        payment_link = self.get_payment_link()
+        if payment_link:
+            lines += ["", f"You can pay online here: {payment_link}"]
+        if company:
+            bank = [
+                ("Bank", company.bank_name),
+                ("Account name", company.account_name),
+                ("Account number", company.account_number),
+                ("Sort code", company.sort_code),
+                ("IBAN", company.iban),
+                ("SWIFT/BIC", company.swift_bic),
+            ]
+            bank = [f"{label}: {value}" for label, value in bank if value]
+            if bank:
+                lines += ["", "Bank transfer details:"] + bank
+                lines += [f"Reference: {self.invoice_number}"]
+        terms = self.get_payment_terms()
+        if terms:
+            lines += ["", terms]
+        lines += ["", "Kind regards,", company.company_name if company else ""]
+        return "\n".join(lines)
+
+    def mailto_link(self):
+        """A mailto: link that opens the user's email program with the details filled in."""
+        return "mailto:{to}?subject={subject}&body={body}".format(
+            to=quote(self.client.email, safe="@"),
+            subject=quote(self.email_subject(), safe=""),
+            body=quote(self.email_body().replace("\n", "\r\n"), safe=""),
+        )
 
     def get_payment_terms(self):
         if self.payment_terms:

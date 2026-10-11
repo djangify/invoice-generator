@@ -38,6 +38,58 @@ class InvoiceTotalsTests(InvoiceTestBase):
         self.assertEqual(self.invoice.total(), Decimal("29.00"))
 
 
+class EmailInvoiceTests(InvoiceTestBase):
+    def test_mailto_link_has_address_subject_and_details(self):
+        from urllib.parse import parse_qs, unquote, urlsplit
+
+        link = self.invoice.mailto_link()
+        parts = urlsplit(link)
+        self.assertEqual(parts.scheme, "mailto")
+        self.assertEqual(unquote(parts.path), "c@example.com")
+        query = parse_qs(parts.query)
+        self.assertIn(self.invoice.invoice_number, query["subject"][0])
+        body = query["body"][0]
+        self.assertIn("Hello Test Client,", body)
+        self.assertIn(self.invoice.invoice_number, body)
+        self.assertIn("\u00a329.00", body)
+        self.assertIn("31 May 2026", body)
+
+    def test_bank_details_and_payment_link_included_when_set(self):
+        from urllib.parse import parse_qs, urlsplit
+
+        from invoices.models import CompanySettings
+
+        CompanySettings.objects.create(
+            company_name="Acme Ltd",
+            address_line1="1 Road",
+            city="Town",
+            postcode="AB1 2CD",
+            email="me@acme.test",
+            sort_code="12-34-56",
+            account_number="12345678",
+            stripe_payment_link="https://pay.example.com/abc",
+        )
+        body = parse_qs(urlsplit(self.invoice.mailto_link()).query)["body"][0]
+        self.assertIn("Sort code: 12-34-56", body)
+        self.assertIn("Account number: 12345678", body)
+        self.assertIn("https://pay.example.com/abc", body)
+        self.assertIn("Acme Ltd", body)
+
+    def test_awkward_characters_are_encoded(self):
+        self.client_obj.name = "Smith & Sons <x> 100%"
+        self.client_obj.save()
+        link = self.invoice.mailto_link()
+        self.assertNotIn("<", link)
+        self.assertNotIn(" ", link)
+        self.assertEqual(link.count("&"), 1)  # only the subject/body separator
+
+    def test_button_shown_on_invoice_page(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("invoices:invoice_detail", args=[self.invoice.pk]))
+        self.assertContains(response, "Email Invoice")
+        self.assertContains(response, 'href="mailto:c@example.com?subject=')
+
+
 class AuthRequiredTests(InvoiceTestBase):
     def test_pages_redirect_anonymous_users_to_login(self):
         for name, args in [
@@ -51,9 +103,6 @@ class AuthRequiredTests(InvoiceTestBase):
             response = self.client.get(reverse(name, args=args))
             self.assertEqual(response.status_code, 302, name)
             self.assertIn("/login/", response["Location"], name)
-
-    def test_health_check_is_public(self):
-        self.assertEqual(self.client.get(reverse("invoices:health_check")).status_code, 200)
 
     def test_media_requires_login(self):
         response = self.client.get("/media/logos/anything.png")

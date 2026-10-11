@@ -4,7 +4,7 @@
 ![Invoice Generator header](https://github.com/djangify/invoice-generator/blob/436e389e92f8b87cec47ebb776ae71ee699cf439/invoice-generator-diane-corriette.png)
 
 
-A self-hosted Django application for creating and managing invoices, tracking payments, and generating professional PDFs. Designed for UK tax year tracking (April to April).
+A Django application you run on your own computer for creating and managing invoices, tracking payments, and generating professional PDFs. Designed for UK tax year tracking (April to April).
 
 
 <p align="center">
@@ -18,8 +18,6 @@ A self-hosted Django application for creating and managing invoices, tracking pa
 
   <img src="https://img.shields.io/badge/Database-SQLite--First-003B57?style=for-the-badge" alt="SQLite First">
 
-
-  <img src="https://img.shields.io/badge/Deployment-Docker--Ready-2496ED?style=for-the-badge" alt="Docker Ready">
 
   <img src="https://img.shields.io/badge/Hosting-Self--Hosted--Ready-4B5563?style=for-the-badge" alt="Self Hosted Ready">
 
@@ -36,70 +34,82 @@ A self-hosted Django application for creating and managing invoices, tracking pa
 - **Tax Year Tracking** - Organise invoices by UK tax year (6 April to 5 April)
 - **Quick Actions** - Mark invoices as Sent or Paid with one click
 - **Duplicate Invoices** - Clone existing invoices for repeat billing
+- **Email Invoice** - One click opens your email program with a ready-written message to the client (attach the PDF and send)
 - **Client History** - View all invoices for a specific client with totals and PDF export
 - **Payment Integration** - Add Stripe or PayPal payment links to invoices
 
 ## Requirements
 
 - Windows 10 or 11
-- Docker Desktop (includes Docker Compose)
-
-OR for local development:
-- Python 3.12+ (the Docker image uses 3.12)
-- pip
+- Python 3.12 or newer
 - Node.js, only if you change the design (the built CSS is included)
 
-## Quick Start with Docker
+## Installation
 
-### 1. Clone the Repository
+Open PowerShell and run these steps once.
+
+### 1. Get the code
 
 ```powershell
 git clone https://github.com/djangify/invoice-generator.git
 cd invoice-generator
 ```
 
-### 2. Configure Environment
+### 2. Create a virtual environment and install
+
+```powershell
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 3. Settings (optional)
 
 ```powershell
 copy .env.example .env
 ```
 
-For normal local use you do not need to change anything in `.env`. The app creates its own
-secret key the first time it runs (saved in `data/secret_key.txt`) and a random password for
-your first login. Open `.env` only if you want to set your own login email, timezone or host
-names. Every setting is explained in the file.
+For normal use you do not need to change anything in `.env`. The app creates its own
+secret key the first time it runs (saved in `data/secret_key.txt`). Open `.env` only if you
+want to set your own login email, timezone or email settings. Every setting is explained in
+the file.
 
-### 3. Build and Run
+### 4. Create the database and your first login
 
 ```powershell
-docker compose up --build -d
+python manage.py migrate
+python manage.py create_default_user
 ```
 
-### 4. Access the Application
+The second command prints a random password for your first login (email `admin@example.com`,
+or the `DJANGO_SUPERUSER_EMAIL` you set in `.env`) and saves the same details in
+`data/first_login.txt`. Log in, change your password on the password change page, then delete
+`data/first_login.txt`.
 
-- **Application**: http://localhost:8000
-- **Admin Panel**: http://localhost:8000/admin
-
-The container only listens on this computer (`127.0.0.1`). To share it on your network, change
-`127.0.0.1:8000:8000` to `8000:8000` in `docker-compose.yml` and add your address to
-`ALLOWED_HOSTS` in `.env`.
-
-### 5. Get your first login
-
-The first time the app starts it creates your login (email `admin@example.com`, or the
-`DJANGO_SUPERUSER_EMAIL` you set in `.env`) with a random password. Show it with:
+### 5. Run the app
 
 ```powershell
-docker compose logs web | Select-String Password
+python manage.py runserver
 ```
 
-The same details are saved in `data/first_login.txt`. Log in, change your password on the
-password change page, then delete `data/first_login.txt`.
+Open http://127.0.0.1:8000 and log in. The admin panel is at http://127.0.0.1:8000/admin.
 
-Forgot it? Give the login a new random password:
+### Starting it again later
 
 ```powershell
-docker compose exec web python manage.py create_default_user --reset
+cd invoice-generator
+venv\Scripts\activate
+python manage.py runserver
+```
+
+Press Ctrl+C in the PowerShell window to stop it.
+
+### Forgot your password?
+
+Give the login a new random password (shown on screen and saved to `data/first_login.txt`):
+
+```powershell
+python manage.py create_default_user --reset
 ```
 
 ## First-Time Setup
@@ -153,60 +163,6 @@ data/
 **Important**: Back up the `./data/` directory regularly to prevent data loss. It holds your
 invoices, client details and bank details, so keep the backups private.
 
-## Docker Commands
-
-```powershell
-# Start the application
-docker compose up -d
-
-# Stop the application
-docker compose down
-
-# View logs
-docker compose logs -f
-
-# Rebuild after code changes
-docker compose up --build -d
-
-# Restart the application
-docker compose restart
-
-# Create superuser manually
-docker compose exec web python manage.py createsuperuser
-
-# Access Django shell
-docker compose exec web python manage.py shell
-
-# Run migrations manually
-docker compose exec web python manage.py migrate
-
-# Backup: see Backup and Restore below
-```
-
-## Local Development (Without Docker)
-
-```powershell
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create the database
-python manage.py migrate
-
-# Create your first login (prints a random password and saves it to data/first_login.txt)
-python manage.py create_default_user
-
-# Run the app
-python manage.py runserver
-```
-
-The `data/` folder is created for you. Open http://127.0.0.1:8000 and log in.
-
 ## Invoice Workflow
 
 1. **Draft** - Invoice is created but not yet sent
@@ -240,71 +196,38 @@ To generate an invoice from a template:
 
 ## Recurring Invoice Automation
 
-Recurring invoices can be automatically generated when they're due. There are several ways to set this up:
-
-### Docker (Recommended)
-
-The `docker-compose.yml` includes a scheduler service that automatically checks for due recurring invoices daily at 6:00 AM.
-
-**To change the schedule time**, edit `docker-compose.yml`:
-```yaml
-scheduler:
-  environment:
-    - SCHEDULE_HOUR=6    # Hour (0-23)
-    - SCHEDULE_MINUTE=0  # Minute (0-59)
-```
-
-**To check scheduler status:**
-```powershell
-docker compose logs scheduler -f
-```
-
-**To manually trigger recurring invoice processing:**
-```powershell
-docker compose exec web python manage.py process_recurring_invoices
-```
-
-**To see what would be generated (dry run):**
-```powershell
-docker compose exec web python manage.py process_recurring_invoices --dry-run
-```
-
-### Local Development
-
-For local development, you'll need to run the command manually or set up your own scheduler:
-
-**Manual processing:**
-```powershell
-python manage.py process_recurring_invoices
-```
+Recurring invoices are created when you run one command, so set Windows Task Scheduler to run
+it every day. The app does not need to be open for this.
 
 **Using Task Scheduler:**
 1. Open Task Scheduler
 2. Create a Basic Task
 3. Set trigger to Daily at your preferred time
 4. Action: Start a program
-5. Program: `C:\path\to\venv\Scripts\python.exe`
+5. Program: `C:\path\to\invoice-generator\venv\Scripts\python.exe`
 6. Arguments: `manage.py process_recurring_invoices`
 7. Start in: `C:\path\to\invoice-generator`
 
+**To run it by hand:**
+```powershell
+python manage.py process_recurring_invoices
+```
+
+**To see what would be generated (dry run):**
+```powershell
+python manage.py process_recurring_invoices --dry-run
+```
+
 ### How It Works
 
-1. The scheduler checks all **active** recurring invoices
+1. The command checks all **active** recurring invoices
 2. If `next_invoice_date` is today or earlier, an invoice is generated
 3. The invoice is created as a **Draft** with items copied from the template
 4. A PDF is automatically generated
 5. The `next_invoice_date` advances based on the frequency (weekly/monthly/quarterly/yearly)
 6. The process continues until the optional `end_date` is reached
 
-### Disabling the Scheduler
-
-If you don't need automatic recurring invoice generation, you can disable the scheduler service:
-```powershell
-# Run only the web service
-docker compose up -d web
-```
-
-Or remove/comment out the `scheduler` section in `docker-compose.yml`.
+If you do not need automatic generation, do not set up the Task Scheduler task. You can still use **Generate Invoice Now** on each recurring invoice.
 
 ## PDF Invoices
 
@@ -326,27 +249,25 @@ PDFs are stored in `./data/media/invoices/{tax-year}/`
 
 ### Static files not loading
 ```powershell
-docker compose exec web python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput
 ```
 
-### Database errors after update
+### Database errors after an update
 ```powershell
-docker compose exec web python manage.py migrate
+python manage.py migrate
 ```
 
-### Container won't start
+### The app will not start
+Check that the virtual environment is active (you should see `(venv)` at the start of the
+line) and that the packages are installed:
 ```powershell
-# Check logs for errors
-docker compose logs web
-
-# Rebuild from scratch
-docker compose down
-docker compose up --build -d
+venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
 ### Forgot admin password
 ```powershell
-docker compose exec web python manage.py create_default_user --reset
+python manage.py create_default_user --reset
 ```
 This gives the login a new random password (shown on screen and saved to `data/first_login.txt`).
 The "forgot password" email only works if you have set the `EMAIL_HOST` settings in `.env`.
@@ -360,8 +281,6 @@ All optional. See `.env.example` for the full list.
 | `SECRET_KEY` | Django secret key | Generated once, saved in `data/secret_key.txt` |
 | `DEBUG` | Detailed error pages (development only) | `False` |
 | `ALLOWED_HOSTS` | Comma-separated list of allowed hosts | `localhost,127.0.0.1` |
-| `USE_HTTPS` | Set `True` once served over HTTPS: redirects and secure-only cookies | `False` |
-| `CSRF_TRUSTED_ORIGINS` | Comma-separated list with protocol | Built from `ALLOWED_HOSTS` |
 | `DJANGO_SUPERUSER_EMAIL` | Email for the first login | `admin@example.com` |
 | `DJANGO_SUPERUSER_PASSWORD` | Your own first password (not recommended) | Random, saved to `data/first_login.txt` |
 | `TZ` | Timezone | `Europe/London` |
@@ -370,42 +289,34 @@ All optional. See `.env.example` for the full list.
 ## Backup and Restore
 
 ### Backup
-Stop the application first so the database file is not being written to.
+Stop the app first (Ctrl+C) so the database file is not being written to.
 
 ```powershell
-docker compose down
-
 # Create the backup folder and a dated copy of everything in data
 mkdir backups
 Copy-Item -Recurse .\data ".\backups\data-$(Get-Date -Format yyyyMMdd)"
-
-docker compose up -d
 ```
 
 ### Restore
 ```powershell
-# Stop the application
-docker compose down
-
-# Replace data with the backup you want (change the date)
+# Stop the app (Ctrl+C), then replace data with the backup you want (change the date)
 Remove-Item -Recurse -Force .\data
 Copy-Item -Recurse .\backups\data-YYYYMMDD .\data
-
-# Start the application
-docker compose up -d
 ```
 
 ## Security Recommendations
 
-For production deployments:
-
-1. **Keep `DEBUG=False`** - Never run debug mode in production
+1. **Keep `DEBUG=False`** - Never run debug mode
 2. **Keep `data/secret_key.txt` private** - or set your own `SECRET_KEY`
-3. **Use HTTPS** - Put behind a reverse proxy with SSL, then set `USE_HTTPS=True`
-4. **Strong passwords** - Use secure passwords for admin accounts
-5. **Uploads are checked** - The logo upload is verified as a real image, limited in size and dimensions, and renamed; uploaded files are only served to logged-in users
-6. **Regular backups** - Back up the data directory regularly
-7. **Keep updated** - Update dependencies regularly
+3. **Strong passwords** - Change the generated password and use a strong one
+4. **Uploads are checked** - The logo upload is verified as a real image, limited in size and dimensions, and renamed; uploaded files are only served to logged-in users
+5. **Regular backups** - Back up the `data` folder regularly and keep the copies private, as they hold client and bank details
+6. **Keep updated** - Update dependencies regularly
+7. **Built for your own computer** - The app is designed and tested for running on your own machine
+
+## Self-hosting
+
+You can host Invoice Generator on a server of your own if you choose to. It is an ordinary Django app, so the usual Django deployment steps apply. That setup is not covered here and is not supported. If you do it, you are responsible for the server, HTTPS, `ALLOWED_HOSTS`, firewall and backups, because the app holds client and bank details.
 
 ## License
 
@@ -417,7 +328,7 @@ Please read [CONTRIBUTING](CONTRIBUTING.md) before submitting a pull request.
 
 ## DISCLAIMER
           
-This Invoice Generator is provided "as is" without warranty of any kind. If you choose to self-host this software, you do so at your own risk. The developer accepts no responsibility for data loss, inaccuracies, or any issues arising from its use. Always maintain your own backups and verify calculations independently.
+This Invoice Generator is provided "as is" without warranty of any kind. If you choose to run or self-host this software, you do so at your own risk. The developer accepts no responsibility for data loss, inaccuracies, or any issues arising from its use. Always maintain your own backups and verify calculations independently.
 
 <p align="center">
   Made for UK self employed and sole traders<br>
@@ -425,3 +336,5 @@ This Invoice Generator is provided "as is" without warranty of any kind. If you 
 </p>
 
 Maintained by [Diane Corriette](https://github.com/todiane)
+
+[Buy Me A Tea](https://tips.todiane.com/)
