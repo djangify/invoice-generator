@@ -1,281 +1,101 @@
 # Contributing to Invoice Generator
 
-Thank you for your interest in contributing to Invoice Generator! This document provides guidelines and information for contributors.
+Thanks for helping. Invoice Generator is open source under the
+[MIT License](LICENSE.md). By sending a contribution you agree
+that it can be distributed under that same licence.
 
-## Code of Conduct
+## Scope
 
-By participating in this project, you agree to maintain a respectful and inclusive environment. Please be kind and constructive in all interactions.
+Invoice Generator is a **local, single-user, Windows** invoicing tool for UK sole traders:
+one copy, one person, one business. That is how it works today. Other operating systems are
+not supported and have not been tested. Please do not send changes for cloud hosting or
+server deployment.
 
-## How to Contribute
+Several larger ideas are open to contributors (below), including multi-business support and
+other currencies and tax years. Open an issue to talk about the approach before you start on
+any of them.
 
-### Reporting Bugs
+## Ideas to work on
 
-If you find a bug, please create an issue on GitHub with:
+Pick one, open an issue to say you are working on it, then send a pull request.
 
-1. **A clear title** describing the problem
-2. **Steps to reproduce** the issue
-3. **Expected behavior** — what should happen
-4. **Actual behavior** — what actually happens
-5. **Environment details** — Python version, OS, browser, etc.
-6. **Screenshots** if applicable
+**Larger changes (discuss first)**
 
-### Suggesting Features
+1. **Multi-business support.** One person invoices from several businesses in one copy, with
+   a way to switch between them. Today there is a single set of company settings (the code
+   reads `CompanySettings.objects.first()`), and clients, invoices and recurring invoices do
+   not belong to a business. It needs a business link on those models, a data migration for
+   existing data, a switcher in the navigation, and the PDF, the email text and the
+   dashboard following the chosen business.
+2. **Other currencies and tax years.** The tax year (6 April to 5 April) is built into
+   `InvoiceYear` in `invoices/models.py`, and the `£` sign is written directly into
+   `invoices/pdf_generator.py`, `invoices/admin.py`, `invoices/views/client.py`, the email
+   text in `invoices/models.py` and most templates. A currency setting and a tax year start
+   date would make the app usable outside the UK. It needs a way to move existing invoices
+   to the new years, and tests for dates either side of the year boundary.
+3. **Send the email from the app.** The **Email Invoice** button only opens the user's own
+   email program, so the PDF has to be attached by hand. Sending from the app with the PDF
+   attached would need SMTP settings, with the password stored encrypted and never shown
+   again, and clear error messages when sending fails.
 
-We welcome feature suggestions! Please create an issue with:
+**Medium**
 
-1. **A clear description** of the feature
-2. **Use case** — why is this feature needed?
-3. **Proposed solution** — how do you envision it working?
-4. **Alternatives considered** — other ways to solve the problem
+4. **Mark invoices overdue automatically.** There is an Overdue status, but nothing sets it:
+   an unpaid invoice stays Sent after its due date unless someone changes it by hand. A
+   check in the dashboard or in `process_recurring_invoices` that moves unpaid invoices past
+   their due date to Overdue would fix that. It needs tests.
+5. **CSV export.** Export the invoices for a tax year (number, client, dates, subtotal, VAT,
+   total, status) so people can give them to an accountant or open them in a spreadsheet.
+6. **Part payments.** Today an invoice is either paid or not. Recording a payment amount and
+   date, and showing the balance still owed, would help with deposits and instalments.
+7. **Back up now, and restore.** A button in Settings to make a backup of the `data` folder
+   straight away, and a way to restore one. Today both are done by copying files by hand.
 
-### Submitting Pull Requests
+**Good first issues**
 
-1. **Fork the repository** and create your branch from `main`
-2. **Make your changes** following our coding standards
-3. **Test your changes** thoroughly
-4. **Update documentation** if needed
-5. **Submit a pull request** with a clear description
+8. **Tests for recurring invoices and tax years.** The tests cover totals, login, the email
+   link, the logo upload and the first login, but not recurring invoices or the tax year
+   dates. Useful cases: monthly dates at the end of the month (31 January), the end date
+   stopping new invoices, running `process_recurring_invoices` twice without making
+   duplicates, and 5 April and 6 April landing in the right tax year.
+9. **Start scripts for Windows.** A `start.bat` that activates the virtual environment and
+   runs the server, and a `run-recurring.bat` that Task Scheduler can call, so nobody has to
+   type the commands each time.
+10. **Screenshots for the README.** The README has one image. Clear screenshots of the
+    dashboard, an invoice and the PDF would help new users.
 
-## Development Setup
+## Set up
 
-### Prerequisites
-
-- Python 3.11 or higher
-- Git
-- A code editor (VS Code, PyCharm, etc.)
-
-### Getting Started
-
-1. **Fork and clone**
-
-   ```bash
-   git clone https://github.com/YOUR-USERNAME/invoice-generator.git
-   cd invoice-generator
-   ```
-
-2. **Create a virtual environment**
-
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment**
-
-   ```bash
-   copy .env.example .env
-   ```
-
-5. **Initialise the database**
-
-   ```bash
-   python manage.py migrate
-   python manage.py create_default_user
-   ```
-
-6. **Run the development server**
-
-   ```bash
-   python manage.py runserver
-   ```
-
-### Creating a Branch
-
-Use descriptive branch names:
-
-- `feature/add-multi-currency-support`
-- `fix/pdf-logo-alignment`
-- `docs/update-installation-guide`
-
-```bash
-git checkout -b feature/your-feature-name
+```powershell
+git clone https://github.com/djangify/invoice-generator.git
+cd invoice-generator
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py create_default_user   # prints a random password
+python manage.py runserver
 ```
 
-## Coding Standards
+## Before you open a pull request
 
-### Python Style
-
-- Follow [PEP 8](https://pep8.org/) style guidelines
-- Use meaningful variable and function names
-- Add docstrings to functions and classes
-- Keep functions focused and concise
-
-### Django Conventions
-
-- Follow Django's coding style
-- Use class-based views where appropriate
-- Keep business logic in models or utility functions
-- Use Django's ORM properly — avoid raw SQL unless necessary
-
-### Templates
-
-- Use Django's template inheritance
-- Keep templates clean and readable
-- Use semantic HTML
-- Follow the existing Tailwind CSS patterns
-
-### Example Code Style
-
-```python
-def calculate_invoice_total(invoice):
-    """
-    Calculate the total amount for an invoice including VAT.
-    
-    Args:
-        invoice: The Invoice instance
-    
-    Returns:
-        The total amount as a Decimal (subtotal + VAT)
-    """
-    subtotal = sum(item.line_total() for item in invoice.items.all())
-    vat_total = sum(item.vat_amount() for item in invoice.items.all())
-    return subtotal + vat_total
-```
-
-## Testing
-
-### Running Tests
-
-```bash
-# Run all tests
+```powershell
+python manage.py check
+python manage.py makemigrations --check --dry-run
 python manage.py test
-
-# Run specific app tests
-python manage.py test invoices
-
-# Run with pytest (if configured)
-pytest
 ```
 
-### Writing Tests
+All tests must pass. Add a test for any bug you fix or behaviour you add.
+Do not commit your `.env`, your `data/` folder, your virtual environment or any real client,
+invoice or bank details.
 
-- Write tests for new features
-- Ensure existing tests pass before submitting
-- Test edge cases and error conditions
-- Use meaningful test names
+## Changing the CSS
 
-```python
-from django.test import TestCase
-from invoices.models import Invoice, Client
+`static/css/output.css` is generated from `static/src/input.css` with Tailwind:
 
-class InvoiceModelTest(TestCase):
-    def test_invoice_number_generation(self):
-        """Test that invoice numbers are generated correctly."""
-        client = Client.objects.create(
-            name="Test Client",
-            email="test@example.com",
-            address_line1="123 Test Street",
-            city="London",
-            postcode="SW1A 1AA"
-        )
-        invoice = Invoice.objects.create(
-            client=client,
-            date="2025-01-15",
-            due_date="2025-02-14"
-        )
-        self.assertTrue(invoice.invoice_number.startswith("INV-2025-"))
+```powershell
+npm install
+npx @tailwindcss/cli -i static/src/input.css -o static/css/output.css
 ```
 
-## Commit Messages
-
-Write clear, concise commit messages:
-
-- Use the imperative mood ("Add feature" not "Added feature")
-- Keep the first line under 50 characters
-- Add a blank line before detailed description if needed
-
-**Good examples:**
-
-```
-Add multi-currency support to invoices
-
-Fix PDF generation for logos with transparency
-
-Update README with Task Scheduler instructions
-```
-
-**Bad examples:**
-
-```
-fixed stuff
-updates
-WIP
-```
-
-## Pull Request Process
-
-1. **Ensure your code works** — Test locally before submitting
-2. **Update documentation** — If you changed functionality, update docs
-3. **Fill out the PR template** — Provide context and details
-4. **Link related issues** — Use "Fixes #123" to auto-close issues
-5. **Respond to feedback** — Be open to suggestions and changes
-6. **Keep PRs focused** — One feature or fix per PR
-
-### PR Checklist
-
-- [ ] Code follows the project's style guidelines
-- [ ] Self-review of code completed
-- [ ] Documentation updated (if applicable)
-- [ ] Tests added/updated (if applicable)
-- [ ] All tests pass locally
-- [ ] No new warnings introduced
-
-## Documentation
-
-### Where to Document
-
-- **README.md** — Installation, quick start, overview
-- **Code comments** — Complex logic explanation
-- **Docstrings** — Function/class documentation
-- **Wiki/docs** — Detailed guides and tutorials
-
-### Documentation Style
-
-- Use clear, simple language
-- Include code examples where helpful
-- Keep documentation up-to-date with code changes
-- Use proper Markdown formatting
-
-## Project Structure
-
-Understanding the codebase:
-
-```
-invoice-generator/
-├── accounts/              # User authentication (email-based)
-├── invoices/              # Core invoicing functionality
-│   ├── models.py          # Invoice, Client, InvoiceItem, RecurringInvoice
-│   ├── views/             # View functions (organised by feature)
-│   ├── forms.py           # Form definitions
-│   ├── pdf_generator.py   # ReportLab PDF generation
-│   └── urls.py            # URL routing
-├── invoice_generator/     # Project settings
-├── templates/             # HTML templates
-│   ├── base.html          # Base template
-│   ├── invoices/          # Invoice-related templates
-│   └── registration/      # Auth templates
-└── static/                # CSS, JS, images
-```
-
-## Getting Help
-
-- **Questions:** Open a GitHub Discussion
-- **Bugs:** Create an Issue
-- **Security:** Email security concerns privately (see SECURITY.md)
-
-## Recognition
-
-Contributors will be recognised in:
-
-- The project README
-- Release notes for significant contributions
-
----
-
-Thank you for contributing to Invoice Generator! Your efforts help make invoicing easier for freelancers and sole traders everywhere.
+Commit the regenerated `output.css`.
