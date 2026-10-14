@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="free-uk-invoice-generator.png" alt="Invoice Generator: free, open-source invoicing for Windows" width="600">
+</p>
 
 # Invoice Generator
 
