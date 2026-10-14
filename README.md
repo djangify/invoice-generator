@@ -1,9 +1,6 @@
 
 # Invoice Generator
 
-![Invoice Generator header](https://github.com/djangify/invoice-generator/blob/436e389e92f8b87cec47ebb776ae71ee699cf439/invoice-generator-diane-corriette.png)
-
-
 A Django application you run on your own computer for creating and managing invoices, tracking payments, and generating professional PDFs. Designed for UK tax year tracking (April to April).
 
 
@@ -40,6 +37,8 @@ A Django application you run on your own computer for creating and managing invo
 - **Client History** - View all invoices for a specific client with totals and PDF export
 - **Payment Integration** - Add Stripe or PayPal payment links to invoices
 
+**Links:** [Product page](https://www.dianecorriette.com/shop/product/invoice-generator-software/) · [Download and setup guide](https://www.dianecorriette.com/docs/invoice-generator-download-and-setup-guide/) · [Latest release](https://github.com/djangify/invoice-generator/releases/latest) · [Introducing Invoice Generator](https://www.dianecorriette.com/blog/invoice-generator-open-source-django/)
+
 ## Requirements
 
 - Windows 10 or 11
@@ -48,9 +47,12 @@ A Django application you run on your own computer for creating and managing invo
 
 ## Installation
 
-Open PowerShell and run these steps once.
+Open PowerShell and run these steps once. There is also a step-by-step
+[download and setup guide](https://www.dianecorriette.com/docs/invoice-generator-download-and-setup-guide/) on the website.
 
 ### 1. Get the code
+
+Download the zip from the [latest release](https://github.com/djangify/invoice-generator/releases/latest) and unzip it, or use Git:
 
 ```powershell
 git clone https://github.com/djangify/invoice-generator.git
@@ -110,6 +112,12 @@ Give the login a new random password (shown on screen and saved to `data/first_l
 ```powershell
 python manage.py create_default_user --reset
 ```
+
+### Updating to a newer version
+
+Check the [releases page](https://github.com/djangify/invoice-generator/releases) for the latest version.
+Unzip the new release into a new folder, copy your old `data` folder into it, then follow the
+installation steps above. Keep the old folder until you have checked your invoices look right.
 
 ## First-Time Setup
 
@@ -331,9 +339,9 @@ This Invoice Generator is provided "as is" without warranty of any kind. If you 
 
 <p align="center">
   Made for UK self employed and sole traders<br>
-  <a href="https://todiane.com/blog/invoice-generator-open-source-django">Introducing Invoice Generator</a>
+  <a href="https://www.dianecorriette.com/blog/invoice-generator-open-source-django/">Introducing Invoice Generator</a>
 </p>
 
-Maintained by [Diane Corriette](https://github.com/todiane)
+Maintained by [Diane Corriette](https://github.com/todiane) · [dianecorriette.com](https://www.dianecorriette.com)
 
 [Buy Me A Tea](https://tips.todiane.com/)
