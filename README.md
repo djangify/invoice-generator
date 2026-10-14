@@ -344,4 +344,4 @@ This Invoice Generator is provided "as is" without warranty of any kind. If you 
 
 Maintained by [Diane Corriette](https://github.com/todiane) · [dianecorriette.com](https://www.dianecorriette.com)
 
-[Buy Me A Tea](https://tips.todiane.com/)
+[Buy Me A Tea](https://thanks.dianecorriette.com/)
